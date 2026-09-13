@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String    @id @default(uuid()) @db.Uuid
+  email               String    @unique
+  passwordHash        String    @map("password_hash")
+  displayName         String?   @map("display_name")
+  tier                String    @default("free")
+  dailyLimit          Int       @default(3) @map("daily_limit")
+  lemonCustomerId     String?   @map("lemon_customer_id")
+  lemonSubscriptionId String?   @map("lemon_subscription_id")
+  subscriptionStatus  String?   @map("subscription_status")
+  trialEndsAt         DateTime? @map("trial_ends_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  generations      Generation[]
+  dailyUsage       DailyUsage[]
+  battles          Battle[]
+  commentAnalyses  CommentAnalysis[]
+  hooks            Hook[]
+  readinessScores  ReadinessScore[]
+  contentGaps      ContentGap[]
+  validations      Validation[]
+  repurposes       Repurpose[]
+
+  @@map("users")
+}
+
+model Generation {
+  id                   String   @id @default(uuid()) @db.Uuid
+  userId               String   @map("user_id") @db.Uuid
+  inputTitle           String   @map("input_title")
+  niche                String?
+  analysis             Json
+  generatedTitles      Json     @map("generated_titles")
+  generatedDescription Json     @map("generated_description")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("generations")
+}
+
+model DailyUsage {
+  id     String   @id @default(uuid()) @db.Uuid
+  userId String   @map("user_id") @db.Uuid
+  date   DateTime @db.Date
+  count  Int      @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("daily_usage")
+}
+
+model Battle {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  titleA      String   @map("title_a")
+  titleB      String   @map("title_b")
+  winnerTitle String   @map("winner_title")
+  winnerScore Int      @map("winner_score")
+  loserScore  Int      @map("loser_score")
+  analysis    Json
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("battles")
+}
+
+model CommentAnalysis {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  inputComments String   @map("input_comments")
+  analysis      Json
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("comment_analyses")
+}
+
+model Hook {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  inputTitle String   @map("input_title")
+  niche      String?
+  analysis   Json
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("hooks")
+}
+
+model ReadinessScore {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  input     Json
+  analysis  Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("readiness_scores")
+}
+
+model ContentGap {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  inputUrls   String?  @map("input_urls")
+  inputTopics String?  @map("input_topics")
+  analysis    Json
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("content_gaps")
+}
+
+model Validation {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  idea      String
+  niche     String?
+  analysis  Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("validations")
+}
+
+model Repurpose {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String
+  niche     String?
+  analysis  Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("repurposes")
+}

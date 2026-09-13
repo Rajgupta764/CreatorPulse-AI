@@ -1,0 +1,27 @@
+{
+  "name": "creatorpulse-ai",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run start:dev --workspace packages/backend",
+    "dev:frontend": "npm run dev --workspace packages/frontend",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "npm run build --workspace packages/backend",
+    "build:frontend": "npm run build --workspace packages/frontend",
+    "db:migrate": "npm run prisma:migrate --workspace packages/backend",
+    "db:generate": "npm run prisma:generate --workspace packages/backend",
+    "db:studio": "npm run prisma:studio --workspace packages/backend",
+    "lint": "npm run lint --workspace packages/frontend",
+    "test": "npm run test --workspace packages/backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "prisma@6.19.3": true
+  }
+}
