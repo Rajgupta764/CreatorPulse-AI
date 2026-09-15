@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Rocket } from "lucide-react";
+import { Rocket, Loader2 } from "lucide-react";
 import ToolPageLayout from "@/components/shared/tool-page-layout";
+import AnalyzingState from "@/components/shared/analyzing-state";
 import { apiFetch } from "@/lib/api-client";
 import type { ReadinessResponse } from "@/types";
 
@@ -33,7 +34,6 @@ export default function ReadinessPage() {
       title="Launch Command"
       description="Pre-flight check for your next video. Scores your title, description, hook, and thumbnail readiness with a Go / No-Go verdict."
       icon={Rocket}
-      image="/images/download__12_-removebg-preview.png"
       steps={[
         { num: 1, title: "Enter video details", desc: "Provide your title, description, hook script, and thumbnail description." },
         { num: 2, title: "AI scores readiness", desc: "Evaluates each element and calculates an overall readiness score." },
@@ -41,14 +41,57 @@ export default function ReadinessPage() {
       ]}
     >
       <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-card p-6">
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" required className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description (optional)" rows={3} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-        <textarea value={hook} onChange={(e) => setHook(e.target.value)} placeholder="Hook script (optional)" rows={3} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-        <textarea value={thumbnail} onChange={(e) => setThumbnail(e.target.value)} placeholder="Thumbnail description (optional) e.g. 'Close-up of shocked face with red arrow pointing at text'" rows={2} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+        <div className="space-y-2">
+          <label htmlFor="readiness-title" className="text-sm font-medium">Title</label>
+          <input
+            id="readiness-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Your video title"
+            required
+            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="readiness-desc" className="text-sm font-medium">Description <span className="text-muted-foreground font-normal">(optional)</span></label>
+          <textarea
+            id="readiness-desc"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Video description"
+            rows={3}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="readiness-hook" className="text-sm font-medium">Hook Script <span className="text-muted-foreground font-normal">(optional)</span></label>
+          <textarea
+            id="readiness-hook"
+            value={hook}
+            onChange={(e) => setHook(e.target.value)}
+            placeholder="Your opening hook script"
+            rows={3}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="readiness-thumb" className="text-sm font-medium">Thumbnail Description <span className="text-muted-foreground font-normal">(optional)</span></label>
+          <textarea
+            id="readiness-thumb"
+            value={thumbnail}
+            onChange={(e) => setThumbnail(e.target.value)}
+            placeholder="e.g. Close-up of shocked face with red arrow pointing at text"
+            rows={2}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        </div>
         <button type="submit" disabled={loading} className="btn btn-primary w-full px-6 py-2.5 sm:w-auto">
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {loading ? "Scoring..." : "Check Readiness"}
         </button>
       </form>
+
+      {loading && <AnalyzingState icon={Rocket} />}
 
       {error && <div className="mt-6 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
@@ -56,7 +99,7 @@ export default function ReadinessPage() {
         <div className="mt-8 space-y-4">
           <div className="rounded-xl border border-border bg-card p-6 text-center">
             <p className={`text-4xl font-mono font-bold ${result.goNoGo === "go" ? "text-chart-2" : "text-destructive"}`}>{result.overallScore}/100</p>
-            <p className="text-sm text-muted-foreground mt-1 uppercase font-medium">{result.goNoGo === "go" ? "Go ✅" : "No-Go ❌"}</p>
+            <p className={`text-sm mt-1 uppercase font-medium ${result.goNoGo === "go" ? "text-chart-2" : "text-destructive"}`}>{result.goNoGo === "go" ? "Go — Ready to Launch" : "No-Go — Needs Improvement"}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {[{ label: "Title", score: result.titleScore }, { label: "Description", score: result.descriptionScore }, { label: "Hook", score: result.hookScore }, { label: "Thumbnail", score: result.thumbnailScore }].map((item) => (

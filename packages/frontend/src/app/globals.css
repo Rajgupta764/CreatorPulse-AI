@@ -242,3 +242,22 @@ h1, h2, h3, h4, h5, h6 {
   animation: grow-up 0.8s ease-out forwards;
   transform-origin: 50% 100%;
 }
+
+/* Consistent section spacing */
+.section-spacing { padding-top: 5rem; padding-bottom: 5rem; }
+.section-spacing-sm { padding-top: 4rem; padding-bottom: 4rem; }
+
+/* Consistent container */
+.page-container {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+@media (min-width: 640px) {
+  .page-container { padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+@media (min-width: 1024px) {
+  .page-container { padding-left: 2rem; padding-right: 2rem; }
+}

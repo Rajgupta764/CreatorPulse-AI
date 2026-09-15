@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Map } from "lucide-react";
+import { Map, Loader2 } from "lucide-react";
 import ToolPageLayout from "@/components/shared/tool-page-layout";
+import AnalyzingState from "@/components/shared/analyzing-state";
 import { apiFetch } from "@/lib/api-client";
 import type { ContentGapResponse } from "@/types";
 
@@ -31,7 +32,6 @@ export default function ContentGapPage() {
       title="Opportunity Map"
       description="Analyze your competition and discover untapped content opportunities ranked by difficulty, timeline, and first-mover advantage."
       icon={Map}
-      image="/images/download__12_-removebg-preview.png"
       steps={[
         { num: 1, title: "Enter competitors", desc: "Provide competitor URLs or describe your niche." },
         { num: 2, title: "AI maps the landscape", desc: "Identifies saturated topics and hidden content gaps." },
@@ -39,12 +39,35 @@ export default function ContentGapPage() {
       ]}
     >
       <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-card p-6">
-        <textarea value={urls} onChange={(e) => setUrls(e.target.value)} placeholder="Competitor URLs or descriptions (optional)" rows={3} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-        <textarea value={topics} onChange={(e) => setTopics(e.target.value)} placeholder="Your niche/topics (optional)" rows={2} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+        <div className="space-y-2">
+          <label htmlFor="gap-urls" className="text-sm font-medium">Competitor URLs <span className="text-muted-foreground font-normal">(optional)</span></label>
+          <textarea
+            id="gap-urls"
+            value={urls}
+            onChange={(e) => setUrls(e.target.value)}
+            placeholder="Paste competitor URLs or descriptions..."
+            rows={3}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="gap-topics" className="text-sm font-medium">Niche / Topics <span className="text-muted-foreground font-normal">(optional)</span></label>
+          <textarea
+            id="gap-topics"
+            value={topics}
+            onChange={(e) => setTopics(e.target.value)}
+            placeholder="Your niche or topics of interest..."
+            rows={2}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        </div>
         <button type="submit" disabled={loading} className="btn btn-primary w-full px-6 py-2.5 sm:w-auto">
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {loading ? "Analyzing..." : "Find Gaps"}
         </button>
       </form>
+
+      {loading && <AnalyzingState icon={Map} />}
 
       {error && <div className="mt-6 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 

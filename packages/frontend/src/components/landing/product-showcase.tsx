@@ -37,16 +37,16 @@ export default function ProductShowcase() {
   const slide = slides[active];
 
   return (
-    <section className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-      <div className="mx-auto max-w-4xl">
+    <section className="section-spacing page-container">
+      <div className="mx-auto max-w-5xl">
         <div
           ref={ref}
           className={`mx-auto max-w-xl text-center reveal-up ${inView ? "visible" : ""}`}
         >
-          <div className="mb-2 inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
             Product Tour
           </div>
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             See CreatorPulse AI in Action
           </h2>
           <p className="mt-3 text-sm text-muted-foreground sm:text-base">
@@ -65,7 +65,7 @@ export default function ProductShowcase() {
             url="creatorpulse.ai/generate"
             width={slide.width}
             height={slide.height}
-            className="mx-auto w-full max-w-[640px]"
+            className="mx-auto w-full max-w-[620px]"
           />
         </div>
 
@@ -77,7 +77,7 @@ export default function ProductShowcase() {
                 type="button"
                 onClick={() => setActive(i)}
                 aria-pressed={i === active}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${
                   i === active
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground"

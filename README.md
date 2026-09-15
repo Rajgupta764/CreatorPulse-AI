@@ -98,3 +98,7 @@ To start the database:
 ```bash
 docker start creatorpulse-db
 ```
+
+To stop the docker :- docker compose up -d
+To delete the docker file :- docker rm viralforge-db
+To start the docker with the new name :- docker compose up -d
