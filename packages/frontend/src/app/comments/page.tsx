@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Loader2 } from "lucide-react";
 import ToolPageLayout from "@/components/shared/tool-page-layout";
+import AnalyzingState from "@/components/shared/analyzing-state";
 import { apiFetch } from "@/lib/api-client";
 import type { CommentsResponse } from "@/types";
 
@@ -31,7 +32,6 @@ export default function CommentsPage() {
       title="Audience Compass"
       description="Paste your YouTube comments and AI extracts pain points, sentiment, and content opportunities — understand your audience at scale."
       icon={MessageSquare}
-      image="/images/download__12_-removebg-preview.png"
       steps={[
         { num: 1, title: "Paste comments", desc: "Copy and paste real comments from your YouTube videos." },
         { num: 2, title: "AI mines insights", desc: "Identifies themes, pain points, and audience desires." },
@@ -39,12 +39,35 @@ export default function CommentsPage() {
       ]}
     >
       <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-card p-6">
-        <textarea value={comments} onChange={(e) => setComments(e.target.value)} placeholder="Paste YouTube comments here..." required rows={6} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-        <input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="Your niche (optional) e.g., tech reviews, gaming, fitness" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+        <div className="space-y-2">
+          <label htmlFor="comments-input" className="text-sm font-medium">YouTube Comments</label>
+          <textarea
+            id="comments-input"
+            value={comments}
+            onChange={(e) => setComments(e.target.value)}
+            placeholder="Paste YouTube comments here..."
+            required
+            rows={6}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="comments-niche" className="text-sm font-medium">Niche <span className="text-muted-foreground font-normal">(optional)</span></label>
+          <input
+            id="comments-niche"
+            value={niche}
+            onChange={(e) => setNiche(e.target.value)}
+            placeholder="e.g. tech reviews, gaming, fitness"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
         <button type="submit" disabled={loading} className="btn btn-primary w-full px-6 py-2.5 sm:w-auto">
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {loading ? "Analyzing..." : "Analyze Comments"}
         </button>
       </form>
+
+      {loading && <AnalyzingState icon={MessageSquare} />}
 
       {error && <div className="mt-6 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 

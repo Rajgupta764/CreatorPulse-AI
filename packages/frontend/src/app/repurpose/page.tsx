@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Shuffle } from "lucide-react";
+import { Shuffle, Loader2 } from "lucide-react";
 import ToolPageLayout from "@/components/shared/tool-page-layout";
+import AnalyzingState from "@/components/shared/analyzing-state";
 import { apiFetch } from "@/lib/api-client";
 import type { RepurposeResponse } from "@/types";
 
@@ -37,7 +38,6 @@ export default function RepurposePage() {
       title="Content Atomizer"
       description="Turn one YouTube title into platform-optimized posts for TikTok, Instagram, X, and LinkedIn — captions, hashtags, and timing included."
       icon={Shuffle}
-      image="/images/download__12_-removebg-preview.png"
       steps={[
         { num: 1, title: "Enter your content", desc: "Paste your YouTube title and niche." },
         { num: 2, title: "AI adapts per platform", desc: "Generates optimized posts for TikTok, Instagram, X, and LinkedIn." },
@@ -45,20 +45,42 @@ export default function RepurposePage() {
       ]}
     >
       <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-card p-6">
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="YouTube title" required className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-        <input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="Niche (optional)" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+        <div className="space-y-2">
+          <label htmlFor="repurpose-title" className="text-sm font-medium">YouTube Title</label>
+          <input
+            id="repurpose-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. I Tried 30 Days of Cold Swimming"
+            required
+            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="repurpose-niche" className="text-sm font-medium">Niche <span className="text-muted-foreground font-normal">(optional)</span></label>
+          <input
+            id="repurpose-niche"
+            value={niche}
+            onChange={(e) => setNiche(e.target.value)}
+            placeholder="e.g. health, fitness, lifestyle"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
         <button type="submit" disabled={loading} className="btn btn-primary w-full px-6 py-2.5 sm:w-auto">
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {loading ? "Repurposing..." : "Repurpose"}
         </button>
       </form>
 
       {!isLoggedIn && (
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
+        <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
           <span className="text-muted-foreground">Results won&apos;t be saved. </span>
           <Link href="/login" className="font-medium text-primary hover:underline">Sign in</Link>
           <span className="text-muted-foreground"> to track your history and unlock 3 analyses/day.</span>
         </div>
       )}
+
+      {loading && <AnalyzingState icon={Shuffle} />}
 
       {error && <div className="mt-6 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 

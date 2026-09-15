@@ -69,10 +69,8 @@ export default function Nav() {
     <nav className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-lg">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/" className="flex items-center gap-2.5 text-lg font-bold tracking-tight">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-            CPA
-          </span>
-          <span className="hidden sm:inline">CreatorPulse AI</span>
+          <img src="/logo.png" alt="CreatorPulse" style={{ height: '32px', width: 'auto' }} />
+          <span className="sr-only">CreatorPulse AI</span>
         </Link>
 
         <div className="hidden items-center gap-1 md:flex">

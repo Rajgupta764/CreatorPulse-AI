@@ -109,8 +109,8 @@ export default function SignupPage() {
         ) : (
           <>
             <div className="mb-6 text-center">
-              <Link href="/" className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-brand-light text-sm font-bold text-primary-foreground">
-                CPA
+              <Link href="/" className="mx-auto flex h-10 items-center justify-center">
+                <img src="/logo.png" alt="CreatorPulse" style={{ height: '32px', width: 'auto' }} />
               </Link>
               <h1 className="mt-4 text-2xl font-bold">Create Account</h1>
               <p className="mt-1 text-sm text-muted-foreground">Start optimizing your titles today</p>

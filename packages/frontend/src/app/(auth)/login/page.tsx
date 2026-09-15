@@ -78,8 +78,8 @@ export default function LoginPage() {
 
       <div className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
         <div className="mb-6 text-center">
-          <Link href="/" className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-brand-light text-sm font-bold text-primary-foreground">
-            CPA
+          <Link href="/" className="mx-auto flex h-10 items-center justify-center">
+            <img src="/logo.png" alt="CreatorPulse" style={{ height: '32px', width: 'auto' }} />
           </Link>
           <h1 className="mt-4 text-2xl font-bold">Sign In</h1>
           <p className="mt-1 text-sm text-muted-foreground">Welcome back to CreatorPulse AI</p>

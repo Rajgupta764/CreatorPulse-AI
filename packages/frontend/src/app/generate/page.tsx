@@ -67,11 +67,10 @@ export default function GeneratePage() {
       title="Title DNA Analyzer"
       description="Paste any YouTube title and get a full AI-powered breakdown — virality score, psychology dimensions, patterns, power words, and your smartest next move."
       icon={BarChart3}
-      image="/images/download__12_-removebg-preview.png"
       steps={[
-        { num: 1, title: "Paste your title", desc: "Enter any YouTube title and optionally specify your niche for personalized insights." },
-        { num: 2, title: "AI deep analysis", desc: "Our engine scores virality, psychology, patterns, and power words in seconds." },
-        { num: 3, title: "Get your playbook", desc: "Review your score breakdown, then follow the actionable next move to optimize." },
+        { num: 1, title: "Paste your title", desc: "Enter any YouTube title and optionally specify your niche." },
+        { num: 2, title: "AI deep analysis", desc: "Scores virality, psychology, patterns, and power words in seconds." },
+        { num: 3, title: "Get your playbook", desc: "Review your breakdown and follow the actionable next move." },
       ]}
     >
       <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-card p-6">
@@ -83,8 +82,8 @@ export default function GeneratePage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            placeholder="Enter YouTube title..."
+            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="e.g. I Tried 30 Days of Cold Swimming"
           />
         </div>
 
@@ -95,7 +94,7 @@ export default function GeneratePage() {
             type="text"
             value={niche}
             onChange={(e) => setNiche(e.target.value)}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="e.g. tech, gaming, education"
           />
         </div>

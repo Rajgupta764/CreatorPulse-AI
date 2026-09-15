@@ -2,14 +2,18 @@
 
 import Image from "next/image";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
+import {
+  BarChart3, Swords, Lightbulb, ClipboardCheck, Rocket,
+  MessageSquare,
+} from "lucide-react";
 
 const tools = [
-  { title: "Title Analyzer", desc: "Viral DNA & psychology scores" },
-  { title: "Title Battle", desc: "Head-to-head comparison" },
-  { title: "Hook Lab", desc: "30-sec opening scripts" },
-  { title: "Idea Validator", desc: "6-dimension scoring" },
-  { title: "Launch Command", desc: "Pre-upload readiness" },
-  { title: "Audience Compass", desc: "Comment intelligence" },
+  { title: "Title Analyzer", desc: "Viral DNA & psychology scores", icon: BarChart3, featured: true },
+  { title: "Title Battle", desc: "Head-to-head comparison", icon: Swords },
+  { title: "Hook Lab", desc: "30-sec opening scripts", icon: Lightbulb },
+  { title: "Idea Validator", desc: "6-dimension scoring", icon: ClipboardCheck },
+  { title: "Launch Command", desc: "Pre-upload readiness", icon: Rocket },
+  { title: "Audience Compass", desc: "Comment intelligence", icon: MessageSquare },
 ];
 
 export default function FeatureGrid() {
@@ -17,12 +21,15 @@ export default function FeatureGrid() {
   const { ref: gridRef, inView: gridInView } = useScrollReveal({ threshold: 0.05 });
 
   return (
-    <section className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+    <section className="section-spacing page-container">
       <div className="mx-auto max-w-7xl">
         <div
           ref={headingRef}
           className={`mx-auto max-w-2xl text-center reveal-up ${headingInView ? "visible" : ""}`}
         >
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+            All-in-One Platform
+          </div>
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Everything You Need
           </h2>
@@ -33,43 +40,26 @@ export default function FeatureGrid() {
 
         <div
           ref={gridRef}
-          className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6"
+          className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3"
         >
-          <div
-            className={`reveal-up col-span-2 overflow-hidden rounded-2xl bg-gradient-to-br from-primary/5 to-primary/[0.02] sm:col-span-1 sm:row-span-2 ${gridInView ? "visible" : ""}`}
-            style={{ transitionDelay: "100ms" }}
-          >
-            <div className="flex h-full flex-col justify-between p-6">
-              <div>
-                <h3 className="text-xl font-semibold">Explore Tools</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {tools.length} powerful tools to optimize every part of your content workflow.
+          {tools.map((tool, i) => {
+            const Icon = tool.icon;
+            return (
+              <div
+                key={tool.title}
+                className={`group relative rounded-2xl border border-border bg-card p-6 transition-all duration-200 hover:border-primary/20 hover:shadow-[0_4px_20px_rgba(245,158,11,0.06)] ${tool.featured ? "sm:col-span-2 sm:row-span-2 sm:p-8 lg:col-span-1 lg:row-span-1" : ""} ${gridInView ? "visible" : ""}`}
+                style={{ transitionDelay: `${100 + i * 80}ms` }}
+              >
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15 ${gridInView ? "reveal visible" : "reveal"}`} style={{ transitionDelay: `${200 + i * 80}ms` }}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-4 text-base font-semibold">{tool.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  {tool.desc}
                 </p>
               </div>
-              <div className="mt-4">
-                <Image
-                  src="/images/Feature Sections.png"
-                  alt="CreatorPulse AI tools overview"
-                  width={400}
-                  height={300}
-                  className="h-auto w-full rounded-lg object-contain"
-                />
-              </div>
-            </div>
-          </div>
-
-          {tools.map((tool, i) => (
-            <div
-              key={tool.title}
-              className={`reveal rounded-xl border border-border bg-card p-5 sm:p-6 ${gridInView ? "visible" : ""}`}
-              style={{ transitionDelay: `${200 + i * 100}ms` }}
-            >
-              <h3 className="text-sm font-semibold sm:text-base">{tool.title}</h3>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                {tool.desc}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

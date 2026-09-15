@@ -89,9 +89,9 @@ export default function Hero() {
       className="relative overflow-hidden px-4 pb-12 pt-4 sm:px-6 sm:pt-6 lg:px-8"
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-primary/15 to-brand-light/10 blur-[100px] animate-float" />
-        <div className="absolute -bottom-32 -right-32 h-[400px] w-[400px] rounded-full bg-gradient-to-br from-brand-light/15 to-chart-2/10 blur-[80px] animate-float-slow" />
-        <div className="absolute left-1/3 top-1/4 h-64 w-64 rounded-full bg-gradient-to-tr from-primary/5 to-transparent blur-[60px] animate-float" style={{ animationDelay: "2s", animationDuration: "14s" }} />
+        <div className="absolute -left-40 -top-40 h-125 w-125 rounded-full bg-linear-to-br from-primary/15 to-brand-light/10 blur-[100px] animate-float" />
+        <div className="absolute -bottom-32 -right-32 h-100 w-100 rounded-full bg-linear-to-br from-brand-light/15 to-chart-2/10 blur-[80px] animate-float-slow" />
+        <div className="absolute left-1/3 top-1/4 h-64 w-64 rounded-full bg-linear-to-tr from-primary/5 to-transparent blur-[60px] animate-float" style={{ animationDelay: "2s", animationDuration: "14s" }} />
       </div>
 
       <div className="relative mx-auto max-w-7xl">
@@ -110,7 +110,7 @@ export default function Hero() {
             <div className={`reveal-item from-up ${leftInView ? "opacity-100 translate-y-0" : ""}`} style={{ transitionDelay: "100ms" }}>
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
                 Turn Your YouTube Titles Into
-                <span className="mt-2 block bg-gradient-to-r from-primary via-brand-light to-chart-2 bg-clip-text text-transparent animate-shimmer">
+                <span className="mt-2 block bg-linear-to-r from-primary via-brand-light to-chart-2 bg-clip-text text-transparent animate-shimmer">
                   Viral Goldmines
                 </span>
               </h1>
@@ -138,7 +138,7 @@ export default function Hero() {
                 ref={robotWrapRef}
                 style={{ backfaceVisibility: "hidden", transformStyle: "preserve-3d" }}
               >
-                <RobotMascot className="relative h-auto w-full max-w-[200px] object-contain sm:max-w-[300px] lg:max-w-[360px]" />
+                <RobotMascot className="relative h-auto w-full max-w-50 object-contain sm:max-w-75 lg:max-w-90" />
               </div>
             </div>
           </div>

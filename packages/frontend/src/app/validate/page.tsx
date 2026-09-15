@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, Loader2 } from "lucide-react";
 import ToolPageLayout from "@/components/shared/tool-page-layout";
+import AnalyzingState from "@/components/shared/analyzing-state";
 import { apiFetch } from "@/lib/api-client";
 import type { ValidateResponse } from "@/types";
 
@@ -36,16 +37,27 @@ export default function ValidatePage() {
       title="Idea Incubator"
       description="Describe your video idea and get scored across 6 dimensions — competition, demand, virality, difficulty, gap, and opportunity."
       icon={ClipboardCheck}
-      image="/images/download__12_-removebg-preview.png"
       steps={[
         { num: 1, title: "Describe your idea", desc: "Write a short description of your video concept." },
-        { num: 2, title: "AI scores 6 dimensions", desc: "Evaluates competition, demand, virality potential, difficulty, content gaps, and opportunity." },
+        { num: 2, title: "AI scores 6 dimensions", desc: "Evaluates competition, demand, virality, difficulty, gaps, and opportunity." },
         { num: 3, title: "Evolve it", desc: "Get an evolved version of your idea with a predicted higher score." },
       ]}
     >
       <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-card p-6">
-        <textarea value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="Describe your video idea..." required rows={4} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+        <div className="space-y-2">
+          <label htmlFor="validate-idea" className="text-sm font-medium">Video Idea</label>
+          <textarea
+            id="validate-idea"
+            value={idea}
+            onChange={(e) => setIdea(e.target.value)}
+            placeholder="Describe your video idea..."
+            required
+            rows={4}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        </div>
         <button type="submit" disabled={loading} className="btn btn-primary w-full px-6 py-2.5 sm:w-auto">
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {loading ? "Validating..." : "Validate Idea"}
         </button>
       </form>
@@ -57,6 +69,8 @@ export default function ValidatePage() {
           <span className="text-muted-foreground"> to track your history and unlock 3 analyses/day.</span>
         </div>
       )}
+
+      {loading && <AnalyzingState icon={ClipboardCheck} />}
 
       {error && <div className="mt-6 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
@@ -76,8 +90,8 @@ export default function ValidatePage() {
             ))}
           </div>
           {result.evolution && (
-            <div className="rounded-xl border border-border bg-card p-6">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Evolved Idea</p>
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-6">
+              <p className="text-xs uppercase tracking-wide text-primary font-medium">Evolved Idea</p>
               <p className="text-lg font-semibold mt-1">{result.evolution.evolvedIdea}</p>
               <p className="text-sm text-muted-foreground mt-1">Estimated new score: {result.evolution.estimatedNewScore}/100</p>
               <p className="text-sm text-muted-foreground mt-1">{result.evolution.explanation}</p>
