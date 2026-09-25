@@ -4,7 +4,7 @@ import OpenAI from "openai";
 @Injectable()
 export class GroqService {
   private client: OpenAI;
-  private readonly model = "llama-3.3-70b-versatile";
+  private readonly model = "openai/gpt-oss-20b";
 
   constructor() {
     this.client = new OpenAI({

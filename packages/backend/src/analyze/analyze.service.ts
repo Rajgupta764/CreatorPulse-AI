@@ -20,7 +20,7 @@ export class AnalyzeService {
     const niche = dto.niche?.trim() || "general";
 
     if (userId) {
-      await this.usage.checkAndIncrement(userId);
+      await this.usage.check(userId);
     }
 
     const preAnalysis = runPreAnalysis(title);
@@ -65,6 +65,7 @@ export class AnalyzeService {
       : { description: "", chapters: [], hashtags: [] };
 
     if (userId) {
+      await this.usage.increment(userId);
       await this.saveToDb(userId, title, niche, analysis, titles, description);
     }
 

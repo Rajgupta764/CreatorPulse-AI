@@ -14,7 +14,7 @@ export class ContentGapService {
 
   async findGaps(dto: ContentGapDto, userId?: string) {
     if (userId) {
-      await this.usage.checkAndIncrement(userId);
+      await this.usage.check(userId);
     }
     const urls = (dto.urls || "").trim();
     const topics = (dto.topics || "").trim();
@@ -31,6 +31,7 @@ export class ContentGapService {
     const result = await this.callLLM(urls, topics, niche);
 
     if (userId) {
+      await this.usage.increment(userId);
       await this.prisma.contentGap.create({
         data: {
           userId,

@@ -17,12 +17,13 @@ export class RepurposeService {
     const niche = dto.niche?.trim() || "general";
 
     if (userId) {
-      await this.usage.checkAndIncrement(userId);
+      await this.usage.check(userId);
     }
 
     const result = await this.callLLM(title, niche);
 
     if (userId) {
+      await this.usage.increment(userId);
       await this.prisma.repurpose.create({
         data: { userId, title, niche, analysis: result },
       });

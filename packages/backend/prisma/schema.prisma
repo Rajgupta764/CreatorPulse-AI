@@ -13,7 +13,7 @@ model User {
   passwordHash        String    @map("password_hash")
   displayName         String?   @map("display_name")
   tier                String    @default("free")
-  dailyLimit          Int       @default(3) @map("daily_limit")
+  dailyLimit          Int       @default(10) @map("daily_limit")
   lemonCustomerId     String?   @map("lemon_customer_id")
   lemonSubscriptionId String?   @map("lemon_subscription_id")
   subscriptionStatus  String?   @map("subscription_status")
