@@ -30,6 +30,11 @@ export class UsageService {
   }
 
   async checkAndIncrement(userId: string) {
+    await this.check(userId);
+    await this.increment(userId);
+  }
+
+  async check(userId: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -46,11 +51,27 @@ export class UsageService {
         429,
       );
     }
+  }
+
+  async increment(userId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     await this.prisma.dailyUsage.upsert({
       where: { userId_date: { userId, date: today } },
       update: { count: { increment: 1 } },
       create: { userId, date: today, count: 1 },
+    });
+  }
+
+  async resetDailyUsage(userId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    await this.prisma.dailyUsage.upsert({
+      where: { userId_date: { userId, date: today } },
+      update: { count: 0 },
+      create: { userId, date: today, count: 0 },
     });
   }
 }

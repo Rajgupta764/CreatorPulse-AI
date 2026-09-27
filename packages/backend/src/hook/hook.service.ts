@@ -17,12 +17,13 @@ export class HookService {
     const niche = dto.niche?.trim() || "general";
 
     if (userId) {
-      await this.usage.checkAndIncrement(userId);
+      await this.usage.check(userId);
     }
 
     const result = await this.callLLM(title, niche);
 
     if (userId) {
+      await this.usage.increment(userId);
       await this.prisma.hook.create({
         data: { userId, inputTitle: title, niche, analysis: result },
       });

@@ -14,7 +14,7 @@ export class CommentsService {
 
   async analyze(dto: CommentsDto, userId?: string) {
     if (userId) {
-      await this.usage.checkAndIncrement(userId);
+      await this.usage.check(userId);
     }
     const comments = dto.comments.trim();
     let niche = dto.niche?.trim();
@@ -39,6 +39,7 @@ export class CommentsService {
     const result = await this.callLLM(comments, niche || "general", recentTitles);
 
     if (userId) {
+      await this.usage.increment(userId);
       await this.prisma.commentAnalysis.create({
         data: { userId, inputComments: comments, analysis: result },
       });

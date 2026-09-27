@@ -18,7 +18,7 @@ export class BattleService {
     const titleB = dto.titleB.trim();
 
     if (userId) {
-      await this.usage.checkAndIncrement(userId);
+      await this.usage.check(userId);
     }
 
     const preA = runPreAnalysis(titleA);
@@ -27,6 +27,7 @@ export class BattleService {
     const result = await this.callLLM(titleA, titleB, preA, preB);
 
     if (userId) {
+      await this.usage.increment(userId);
       await this.prisma.battle.create({
         data: {
           userId,

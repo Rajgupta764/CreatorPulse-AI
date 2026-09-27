@@ -6,7 +6,7 @@ import { AlternativesDto } from "./dto/alternatives.dto";
 import { JwtAuthGuard, OptionalJwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
 
-const GUEST_LIMIT = 3;
+const GUEST_LIMIT = 10;
 const GUEST_WINDOW_MS = 24 * 60 * 60 * 1000;
 const guestUsage = new Map<string, { count: number; timestamp: number }>();
 
