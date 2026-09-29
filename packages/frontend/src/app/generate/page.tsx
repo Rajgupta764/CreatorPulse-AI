@@ -10,6 +10,7 @@ import type { AnalyzeResponse, GeneratedTitle } from "@/types";
 
 export default function GeneratePage() {
   const router = useRouter();
+
   const [title, setTitle] = useState("");
   const [niche, setNiche] = useState("");
   const [result, setResult] = useState<AnalyzeResponse | null>(null);

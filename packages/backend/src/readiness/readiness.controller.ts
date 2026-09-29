@@ -2,7 +2,7 @@ import { Controller, Post, Body, UseGuards } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
 import { ReadinessService } from "./readiness.service";
 import { ReadinessDto } from "./dto/readiness.dto";
-import { OptionalJwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
 
 @ApiTags("Readiness")
@@ -11,12 +11,12 @@ export class ReadinessController {
   constructor(private readonly readinessService: ReadinessService) {}
 
   @Post()
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async score(
     @Body() dto: ReadinessDto,
-    @CurrentUser() user?: { id: string }
+    @CurrentUser() user: { id: string }
   ) {
-    return this.readinessService.score(dto, user?.id);
+    return this.readinessService.score(dto, user.id);
   }
 }

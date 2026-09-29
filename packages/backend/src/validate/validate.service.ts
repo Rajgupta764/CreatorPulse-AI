@@ -12,22 +12,17 @@ export class ValidateService {
     private readonly usage: UsageService,
   ) {}
 
-  async validate(dto: ValidateDto, userId?: string) {
+  async validate(dto: ValidateDto, userId: string) {
     const idea = dto.idea.trim();
     const niche = dto.niche?.trim();
 
-    if (userId) {
-      await this.usage.check(userId);
-    }
+    await this.usage.checkAndIncrement(userId);
 
     const result = await this.callLLM(idea, niche);
 
-    if (userId) {
-      await this.usage.increment(userId);
-      await this.prisma.validation.create({
-        data: { userId, idea, niche: niche || null, analysis: result },
-      });
-    }
+    await this.prisma.validation.create({
+      data: { userId, idea, niche: niche || null, analysis: result },
+    });
 
     return result;
   }

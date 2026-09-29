@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Sparkles, ArrowLeft, Loader2, Check, CreditCard } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 
 export default function BillingSettingsPage() {
-  const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -15,9 +13,6 @@ export default function BillingSettingsPage() {
   const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) { router.replace("/login"); return; }
-
     apiFetch("/api/auth/me")
       .then((r) => r.json())
       .then((data) => {
@@ -26,7 +21,7 @@ export default function BillingSettingsPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [router]);
+  }, []);
 
   async function handleUpgrade() {
     setCheckoutLoading(true);

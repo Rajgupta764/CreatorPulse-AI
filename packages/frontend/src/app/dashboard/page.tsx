@@ -242,12 +242,6 @@ export default function DashboardPage() {
   const [tier, setTier] = useState("free");
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-
     async function load() {
       try {
         const [dashRes, profileRes] = await Promise.all([
@@ -268,7 +262,7 @@ export default function DashboardPage() {
       }
     }
     load();
-  }, [router]);
+  }, []);
 
   /* loading skeleton */
   if (loading) {

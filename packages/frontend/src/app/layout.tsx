@@ -4,6 +4,7 @@ import "./globals.css";
 import Nav from "@/components/shared/nav";
 import BackToTop from "@/components/shared/back-to-top";
 import TitleSetter from "@/components/shared/title-setter";
+import AuthCookieSync from "@/components/shared/auth-cookie-sync";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -39,6 +40,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable} data-scroll-behavior="smooth">
       <body className="min-h-screen bg-background text-foreground antialiased">
         <Nav />
+        <AuthCookieSync />
         {children}
         <BackToTop />
         <TitleSetter />

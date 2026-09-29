@@ -1,19 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle, Loader2, Sparkles } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 
 export default function BillingPage() {
-  const router = useRouter();
   const [status, setStatus] = useState<"checking" | "success" | "timeout">("checking");
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) { router.replace("/login"); return; }
-
     let attempts = 0;
     const maxAttempts = 15;
 
@@ -38,7 +33,7 @@ export default function BillingPage() {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [router]);
+  }, []);
 
   if (status === "checking") {
     return (

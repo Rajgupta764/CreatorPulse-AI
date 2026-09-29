@@ -17,7 +17,7 @@ export default function RepurposePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem("access_token"));
+    setIsLoggedIn(Boolean(localStorage.getItem("access_token")));
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {

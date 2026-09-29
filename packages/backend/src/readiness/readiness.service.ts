@@ -12,10 +12,9 @@ export class ReadinessService {
     private readonly usage: UsageService,
   ) {}
 
-  async score(dto: ReadinessDto, userId?: string) {
-    if (userId) {
-      await this.usage.check(userId);
-    }
+  async score(dto: ReadinessDto, userId: string) {
+    await this.usage.checkAndIncrement(userId);
+
     const input = {
       title: dto.title.trim(),
       description: (dto.description || "").trim(),
@@ -25,12 +24,9 @@ export class ReadinessService {
 
     const result = await this.callLLM(input);
 
-    if (userId) {
-      await this.usage.increment(userId);
-      await this.prisma.readinessScore.create({
-        data: { userId, input, analysis: result },
-      });
-    }
+    await this.prisma.readinessScore.create({
+      data: { userId, input, analysis: result },
+    });
 
     return result;
   }

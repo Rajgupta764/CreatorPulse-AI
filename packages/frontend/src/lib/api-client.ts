@@ -1,3 +1,5 @@
+import { clearAuthCookie } from "@/lib/auth-cookie";
+
 export async function apiFetch(url: string, options: RequestInit = {}) {
   const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
   const headers: Record<string, string> = {
@@ -10,6 +12,7 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
 
   if (res.status === 401 && token) {
     localStorage.removeItem("access_token");
+    clearAuthCookie();
     window.location.href = "/login";
     throw new Error("Session expired");
   }

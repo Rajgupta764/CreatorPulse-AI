@@ -13,33 +13,28 @@ export class BattleService {
     private readonly usage: UsageService,
   ) {}
 
-  async battle(dto: BattleDto, userId?: string) {
+  async battle(dto: BattleDto, userId: string) {
     const titleA = dto.titleA.trim();
     const titleB = dto.titleB.trim();
 
-    if (userId) {
-      await this.usage.check(userId);
-    }
+    await this.usage.checkAndIncrement(userId);
 
     const preA = runPreAnalysis(titleA);
     const preB = runPreAnalysis(titleB);
 
     const result = await this.callLLM(titleA, titleB, preA, preB);
 
-    if (userId) {
-      await this.usage.increment(userId);
-      await this.prisma.battle.create({
-        data: {
-          userId,
-          titleA,
-          titleB,
-          winnerTitle: result.winner.title,
-          winnerScore: result.winner.score,
-          loserScore: result.loser.score,
-          analysis: result,
-        },
-      });
-    }
+    await this.prisma.battle.create({
+      data: {
+        userId,
+        titleA,
+        titleB,
+        winnerTitle: result.winner.title,
+        winnerScore: result.winner.score,
+        loserScore: result.loser.score,
+        analysis: result,
+      },
+    });
 
     return { ...result, _preA: preA, _preB: preB };
   }

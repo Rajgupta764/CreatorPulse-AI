@@ -20,12 +20,17 @@ function getStrength(pw: string): { label: string; color: string; width: string 
   return { label: "Strong", color: "bg-[#6FA56F]", width: "w-full" };
 }
 
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const DISPLAY_NAME_REGEX = /^[a-zA-Z0-9_\-\s]+$/;
+
 export default function SignupPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -37,14 +42,49 @@ export default function SignupPage() {
   const fieldErrors = useMemo(() => {
     const errors: Record<string, string> = {};
     const trimmedEmail = email.trim();
+    const trimmedDisplayName = displayName.trim();
+
     if (touched.email && trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       errors.email = "Enter a valid email address.";
     }
-    if (touched.password && password && password.length < 8) {
-      errors.password = "Must be at least 8 characters.";
+
+    if (touched.password && password && !PASSWORD_REGEX.test(password)) {
+      errors.password =
+        "Must be 8+ chars with uppercase, lowercase, number, and special character.";
     }
+
+    if (touched.confirmPassword && confirmPassword && confirmPassword !== password) {
+      errors.confirmPassword = "Passwords do not match.";
+    }
+
+    if (touched.displayName && trimmedDisplayName) {
+      if (trimmedDisplayName.length < 2) {
+        errors.displayName = "Must be at least 2 characters.";
+      } else if (trimmedDisplayName.length > 50) {
+        errors.displayName = "Must be 50 characters or fewer.";
+      } else if (!DISPLAY_NAME_REGEX.test(trimmedDisplayName)) {
+        errors.displayName =
+          "Only letters, numbers, spaces, hyphens, and underscores allowed.";
+      }
+    }
+
     return errors;
-  }, [email, password, touched]);
+  }, [email, password, confirmPassword, displayName, touched]);
+
+  const isFormValid = useMemo(() => {
+    const trimmedEmail = email.trim();
+    const trimmedDisplayName = displayName.trim();
+    return (
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail) &&
+      PASSWORD_REGEX.test(password) &&
+      confirmPassword === password &&
+      confirmPassword.length > 0 &&
+      (trimmedDisplayName === "" ||
+        (trimmedDisplayName.length >= 2 &&
+          trimmedDisplayName.length <= 50 &&
+          DISPLAY_NAME_REGEX.test(trimmedDisplayName)))
+    );
+  }, [email, password, confirmPassword, displayName]);
 
   function handleBlur(field: string) {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -59,8 +99,14 @@ export default function SignupPage() {
       setError("Please enter a valid email address.");
       return;
     }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    if (!PASSWORD_REGEX.test(password)) {
+      setError(
+        "Password must be 8+ characters with uppercase, lowercase, number, and special character."
+      );
+      return;
+    }
+    if (confirmPassword !== password) {
+      setError("Passwords do not match.");
       return;
     }
 
@@ -69,7 +115,12 @@ export default function SignupPage() {
     try {
       const res = await apiFetch("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({ email: trimmedEmail, password, displayName: displayName.trim() || undefined }),
+        body: JSON.stringify({
+          email: trimmedEmail,
+          password,
+          confirmPassword,
+          displayName: displayName.trim() || undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -132,10 +183,20 @@ export default function SignupPage() {
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
+                  onBlur={() => handleBlur("displayName")}
                   disabled={loading}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  className={`w-full rounded-lg border bg-background px-3 py-2 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${
+                    touched.displayName && fieldErrors.displayName
+                      ? "border-destructive"
+                      : touched.displayName && displayName.trim()
+                        ? "border-[#6FA56F]"
+                        : "border-input"
+                  }`}
                   placeholder="John Creator"
                 />
+                {touched.displayName && fieldErrors.displayName && (
+                  <p className="text-xs text-destructive">{fieldErrors.displayName}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -178,17 +239,16 @@ export default function SignupPage() {
                     onBlur={() => handleBlur("password")}
                     required
                     minLength={8}
+                    maxLength={128}
                     disabled={loading}
                     className={`w-full rounded-lg border bg-background px-3 py-2 pr-10 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${
-                      touched.password && !password
-                        ? "border-input"
-                        : touched.password && fieldErrors.password
-                          ? "border-destructive"
-                          : touched.password && passwordStrength.label === "Strong"
-                            ? "border-[#6FA56F]"
-                            : "border-input"
+                      touched.password && fieldErrors.password
+                        ? "border-destructive"
+                        : touched.password && PASSWORD_REGEX.test(password)
+                          ? "border-[#6FA56F]"
+                          : "border-input"
                     } focus:border-primary`}
-                    placeholder="At least 8 characters"
+                    placeholder="8+ chars, mixed case, number, symbol"
                   />
                   <button
                     type="button"
@@ -215,6 +275,44 @@ export default function SignupPage() {
                 )}
               </div>
 
+              <div className="space-y-2">
+                <label htmlFor="confirmPassword" className="text-sm font-medium">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onBlur={() => handleBlur("confirmPassword")}
+                    required
+                    minLength={8}
+                    maxLength={128}
+                    disabled={loading}
+                    className={`w-full rounded-lg border bg-background px-3 py-2 pr-10 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${
+                      touched.confirmPassword && fieldErrors.confirmPassword
+                        ? "border-destructive"
+                        : touched.confirmPassword && confirmPassword && confirmPassword === password
+                          ? "border-[#6FA56F]"
+                          : "border-input"
+                    } focus:border-primary`}
+                    placeholder="Re-enter your password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {touched.confirmPassword && fieldErrors.confirmPassword && (
+                  <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>
+                )}
+              </div>
+
               <p className="text-xs text-muted-foreground leading-relaxed">
                 By continuing, you agree to our{" "}
                 <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link>{" "}
@@ -224,7 +322,7 @@ export default function SignupPage() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !isFormValid}
                 className="btn btn-primary w-full rounded-lg px-4 py-2 disabled:opacity-60"
               >
                 {loading ? (
@@ -242,12 +340,6 @@ export default function SignupPage() {
                 Sign in
               </Link>
             </p>
-
-            <div className="mt-4 border-t border-border pt-4 text-center">
-              <Link href="/generate" className="text-sm text-muted-foreground transition-colors hover:text-primary">
-                Continue without account &rarr;
-              </Link>
-            </div>
           </>
         )}
       </div>

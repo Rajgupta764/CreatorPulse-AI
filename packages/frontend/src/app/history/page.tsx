@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   BarChart3, Swords, Lightbulb, MessageSquare, Rocket, Map,
@@ -69,7 +68,6 @@ function formatDate(iso: string) {
 }
 
 export default function HistoryPage() {
-  const router = useRouter();
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -88,9 +86,6 @@ export default function HistoryPage() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) { router.replace("/login"); return; }
-
     loadInitial();
   }, []);
 

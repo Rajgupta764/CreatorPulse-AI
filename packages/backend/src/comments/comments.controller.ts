@@ -2,7 +2,7 @@ import { Controller, Post, Body, UseGuards } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
 import { CommentsService } from "./comments.service";
 import { CommentsDto } from "./dto/comments.dto";
-import { OptionalJwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
 
 @ApiTags("Comments")
@@ -11,12 +11,12 @@ export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}
 
   @Post()
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async analyze(
     @Body() dto: CommentsDto,
-    @CurrentUser() user?: { id: string }
+    @CurrentUser() user: { id: string }
   ) {
-    return this.commentsService.analyze(dto, user?.id);
+    return this.commentsService.analyze(dto, user.id);
   }
 }

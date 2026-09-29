@@ -2,12 +2,14 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { clearAuthCookie } from "@/lib/auth-cookie";
 
 export default function LogoutPage() {
   const router = useRouter();
 
   useEffect(() => {
     localStorage.removeItem("access_token");
+    clearAuthCookie();
     router.push("/");
   }, [router]);
 

@@ -12,35 +12,29 @@ export class ContentGapService {
     private readonly usage: UsageService,
   ) {}
 
-  async findGaps(dto: ContentGapDto, userId?: string) {
-    if (userId) {
-      await this.usage.check(userId);
-    }
+  async findGaps(dto: ContentGapDto, userId: string) {
+    await this.usage.checkAndIncrement(userId);
+
     const urls = (dto.urls || "").trim();
     const topics = (dto.topics || "").trim();
 
     let niche: string | undefined;
-    if (userId) {
-      const lastGen = await this.prisma.generation.findFirst({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-      });
-      if (lastGen?.niche) niche = lastGen.niche;
-    }
+    const lastGen = await this.prisma.generation.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+    if (lastGen?.niche) niche = lastGen.niche;
 
     const result = await this.callLLM(urls, topics, niche);
 
-    if (userId) {
-      await this.usage.increment(userId);
-      await this.prisma.contentGap.create({
-        data: {
-          userId,
-          inputUrls: urls || null,
-          inputTopics: topics || null,
-          analysis: result,
-        },
-      });
-    }
+    await this.prisma.contentGap.create({
+      data: {
+        userId,
+        inputUrls: urls || null,
+        inputTopics: topics || null,
+        analysis: result,
+      },
+    });
 
     return result;
   }

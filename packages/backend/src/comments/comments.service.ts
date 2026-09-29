@@ -12,38 +12,32 @@ export class CommentsService {
     private readonly usage: UsageService,
   ) {}
 
-  async analyze(dto: CommentsDto, userId?: string) {
-    if (userId) {
-      await this.usage.check(userId);
-    }
+  async analyze(dto: CommentsDto, userId: string) {
+    await this.usage.checkAndIncrement(userId);
+
     const comments = dto.comments.trim();
     let niche = dto.niche?.trim();
     let recentTitles: string[] = [];
 
-    if (userId) {
-      const lastGen = await this.prisma.generation.findFirst({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-      });
-      if (lastGen?.niche && !niche) niche = lastGen.niche;
+    const lastGen = await this.prisma.generation.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+    if (lastGen?.niche && !niche) niche = lastGen.niche;
 
-      const recent = await this.prisma.generation.findMany({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        select: { inputTitle: true },
-      });
-      recentTitles = recent.map((r) => r.inputTitle);
-    }
+    const recent = await this.prisma.generation.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { inputTitle: true },
+    });
+    recentTitles = recent.map((r) => r.inputTitle);
 
     const result = await this.callLLM(comments, niche || "general", recentTitles);
 
-    if (userId) {
-      await this.usage.increment(userId);
-      await this.prisma.commentAnalysis.create({
-        data: { userId, inputComments: comments, analysis: result },
-      });
-    }
+    await this.prisma.commentAnalysis.create({
+      data: { userId, inputComments: comments, analysis: result },
+    });
 
     return {
       ...result,

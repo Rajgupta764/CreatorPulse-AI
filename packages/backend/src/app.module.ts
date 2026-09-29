@@ -1,4 +1,6 @@
 import { Module } from "@nestjs/common";
+import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
+import { APP_GUARD } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
 import { CommonModule } from "./common/common.module";
 import { AuthModule } from "./auth/auth.module";
@@ -17,6 +19,18 @@ import { HistoryModule } from "./history/history.module";
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        name: "register",
+        ttl: 600000,
+        limit: process.env.NODE_ENV === "test" ? 1000 : 5,
+      },
+      {
+        name: "login",
+        ttl: 600000,
+        limit: process.env.NODE_ENV === "test" ? 1000 : 10,
+      },
+    ]),
     PrismaModule,
     CommonModule,
     AuthModule,
@@ -32,6 +46,12 @@ import { HistoryModule } from "./history/history.module";
     UsageModule,
     BillingModule,
     HistoryModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}
