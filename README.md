@@ -57,7 +57,8 @@ npm run dev
 | `npm run dev` | Run backend + frontend concurrently |
 | `npm run build` | Build backend + frontend |
 | `npm run test` | Backend unit tests (Jest) |
-| `npm run db:migrate` | Prisma migrate dev |
+| `npm run db:migrate` | Prisma migrate dev (local) |
+| `npm run db:deploy` | Prisma migrate deploy (production) |
 | `npm run db:studio` | Prisma Studio |
 | `npm run lint` | Frontend ESLint |
 
@@ -76,6 +77,8 @@ CORS_ORIGINS=http://localhost:3000
 TRUST_PROXY=false
 # Kill switch: set to false to return 503 AI_DISABLED on every AI route
 AI_ENABLED=true
+# Expose Swagger at /api/docs (never true in production)
+SWAGGER_ENABLED=true
 # Optional: shared rate-limit + guest-quota store (see Docker below).
 # Leave unset to run those counters in-process.
 REDIS_URL=redis://localhost:6379
@@ -108,10 +111,14 @@ SITE_URL=http://localhost:3000
 5. Restart the backend. Startup logs will warn about any billing env var that is
    still missing or still set to a placeholder (e.g. `your_variant_id`).
 
-**Frontend (`packages/frontend/.env.local`)**
+**Frontend (`packages/frontend/.env.local`)** — see `packages/frontend/.env.example`
 ```
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
-NEXT_PUBLIC_API_URL=http://localhost:4000/api
+# Origin of the backend WITHOUT /api (e.g. https://api.example.com).
+# Unset in local dev to route /api/* through the next.config.ts rewrite.
+NEXT_PUBLIC_API_URL=http://localhost:4000
+# Server-side rewrite target for /api/* (defaults to http://localhost:4000)
+API_PROXY_URL=http://localhost:4000
 ```
 
 ## Rate Limits
@@ -162,4 +169,24 @@ per-IP credit quota are stored in Redis, so every backend instance shares the
 same counters. When it is unset (or Redis is unreachable) the backend logs a
 warning and falls back to in-process counters — nothing breaks, the limits are
 just not shared across processes.
+
+## Deployment (free tier)
+
+Zero-cost stack, no credit card, platform URLs:
+
+| Piece | Host | Config |
+|---|---|---|
+| Frontend | Netlify (free) | `netlify.toml` |
+| Backend | Render free web service | `render.yaml` (Blueprint) |
+| Database | Neon free Postgres (0.5 GB, no expiry) | `DATABASE_URL` |
+| Keep-alive + monitoring | UptimeRobot (5-min ping to `/api/health`) | — |
+
+Production env checklist:
+
+1. **Backend (Render env vars):** `NODE_ENV=production`, `TRUST_PROXY=true`, `SWAGGER_ENABLED=false`, `CORS_ORIGINS=https://<site>.netlify.app`, `SITE_URL=https://<site>.netlify.app`, plus all secrets (`sync: false` entries in `render.yaml`).
+2. **Frontend (Netlify env vars, set *before* first build — `NEXT_PUBLIC_*` are inlined at build time):** `NEXT_PUBLIC_API_URL=https://<api>.onrender.com` (origin, no `/api`), `NEXT_PUBLIC_SITE_URL=https://<site>.netlify.app`, `API_PROXY_URL=https://<api>.onrender.com`.
+3. **Migrations** run automatically on backend start (`prisma migrate deploy` in `render.yaml`).
+4. **Lemon Squeezy webhook:** `https://<api>.onrender.com/api/billing/webhook` (see setup above).
+
+The browser calls the API directly on its own origin (cross-origin), so real client IPs reach the backend and the guest per-IP quota works. `GET /api/health` returns `503` when the database is unreachable.
 

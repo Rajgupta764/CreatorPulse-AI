@@ -1,0 +1,16 @@
+# Netlify — frontend (Next.js) for the CreatorPulse AI monorepo.
+# Base directory is the repo root so npm workspaces install correctly.
+
+[build]
+  command = "npm run build:shared && npm run build:frontend"
+  publish = "packages/frontend/.next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Required env vars (set in the Netlify dashboard, build-time inlined):
+#   NEXT_PUBLIC_API_URL   = origin of the backend API, e.g. https://api.example.com (no /api suffix)
+#   NEXT_PUBLIC_SITE_URL  = this site's origin, e.g. https://<site>.netlify.app
+#   API_PROXY_URL         = same as NEXT_PUBLIC_API_URL (server-side rewrite fallback)
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
