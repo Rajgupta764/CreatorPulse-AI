@@ -1,13 +1,23 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, LogIn, Loader2 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
+import { setAuthCookie } from "@/lib/auth-cookie";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next");
+
+  useEffect(() => {
+    if (localStorage.getItem("access_token")) {
+      setAuthCookie();
+      router.replace(nextPath || "/dashboard");
+    }
+  }, [router, nextPath]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -61,7 +71,8 @@ export default function LoginPage() {
 
       const data = await res.json();
       localStorage.setItem("access_token", data.access_token);
-      router.push("/dashboard");
+      setAuthCookie();
+      router.replace(nextPath || "/dashboard");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -174,13 +185,15 @@ export default function LoginPage() {
             Sign up
           </Link>
         </p>
-
-        <div className="mt-4 border-t border-border pt-4 text-center">
-          <Link href="/generate" className="text-sm text-muted-foreground transition-colors hover:text-primary">
-            Continue without account &rarr;
-          </Link>
-        </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }

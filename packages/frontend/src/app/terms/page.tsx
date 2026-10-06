@@ -1,3 +1,5 @@
+import { LIMITS } from "@creatorpulse/shared";
+
 export default function TermsPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
@@ -19,16 +21,17 @@ export default function TermsPage() {
 
       <h2 className="mb-3 mt-8 text-xl font-semibold">3. Usage Limits</h2>
       <p className="mb-4 text-muted-foreground">
-        Free accounts are limited to 3 analyses per day. Pro accounts receive 100 analyses
-        per day. We reserve the right to adjust usage limits or terminate accounts for
-        abuse or excessive use that degrades service for other users.
+        Free accounts are limited to {LIMITS.freeDailyCredits} analyses per day. Pro
+        accounts receive {LIMITS.proDailyCredits} analyses per day. We reserve the right
+        to adjust usage limits or terminate accounts for abuse or excessive use that
+        degrades service for other users.
       </p>
 
       <h2 className="mb-3 mt-8 text-xl font-semibold">4. Intellectual Property</h2>
       <p className="mb-4 text-muted-foreground">
         The titles, hooks, and content you input remain your intellectual property.
         Analysis results and generated content are provided as suggestions and are not
-        guaranteed to be original. The ViralForge platform, brand, and underlying
+        guaranteed to be original. The CreatorPulse AI platform, brand, and underlying
         technology are our exclusive property.
       </p>
 

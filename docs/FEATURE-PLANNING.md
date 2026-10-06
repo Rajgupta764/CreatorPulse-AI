@@ -55,7 +55,7 @@ YouTube creators (100–100K subscribers) who:
 | **Database** | PostgreSQL 16 (Docker) | Primary data store |
 | **ORM** | Prisma | Type-safe DB access, migrations |
 | **Auth** | Custom JWT (bcrypt + JWT tokens) | Authentication & authorization |
-| **AI/LLM** | Groq API (llama-3.3-70b-versatile) via OpenAI SDK | LLM inference |
+| **AI/LLM** | Groq API (`openai/gpt-oss-20b`) via OpenAI SDK | LLM inference |
 | **Styling** | Tailwind CSS v4 + shadcn/ui (base-nova) | Dark-themed UI with OKLCH brand colors |
 | **Validation** | class-validator + class-transformer | DTO validation (NestJS) |
 | **API Docs** | Swagger / OpenAPI | Auto-generated API documentation |

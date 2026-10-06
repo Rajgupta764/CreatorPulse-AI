@@ -83,6 +83,22 @@ export default function ContentGapPage() {
               </div>
             </div>
           )}
+          {result.nobodyCovers?.length > 0 && (
+            <div className="rounded-xl border border-border bg-card p-6">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Nobody covers yet</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {result.nobodyCovers.map((t: string, i: number) => (
+                  <span key={i} className="rounded-md bg-chart-2/10 px-2 py-1 text-xs text-chart-2">{t}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {result.contentGap && (
+            <div className="rounded-xl border border-border bg-card p-6">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Gap summary</p>
+              <p className="mt-1.5 text-sm leading-relaxed">{result.contentGap}</p>
+            </div>
+          )}
           {result.opportunities?.length > 0 && (
             <div className="space-y-3">
               <p className="text-sm font-medium">Opportunities</p>
@@ -100,6 +116,12 @@ export default function ContentGapPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          {result.recommendation && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-6">
+              <p className="text-xs uppercase tracking-wide text-primary font-medium">Recommendation</p>
+              <p className="mt-1.5 text-sm leading-relaxed">{result.recommendation}</p>
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from "@nestjs/common";
+import { Controller, Delete, Get, Param, Query, UseGuards } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
 import { HistoryService } from "./history.service";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
@@ -30,5 +30,27 @@ export class HistoryController {
       limit ? parseInt(limit) : 15,
       type || "all",
     );
+  }
+
+  @Get(":type/:id")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  getItem(
+    @CurrentUser() user: { id: string; email: string },
+    @Param("type") type: string,
+    @Param("id") id: string,
+  ) {
+    return this.historyService.getItem(user.id, type, id);
+  }
+
+  @Delete(":type/:id")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  deleteItem(
+    @CurrentUser() user: { id: string; email: string },
+    @Param("type") type: string,
+    @Param("id") id: string,
+  ) {
+    return this.historyService.deleteItem(user.id, type, id);
   }
 }

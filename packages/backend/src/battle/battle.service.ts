@@ -4,6 +4,7 @@ import { GroqService } from "../common/groq.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsageService } from "../usage/usage.service";
 import { BattleDto } from "./dto/battle.dto";
+import { TIERS } from "../common/config/limits";
 
 @Injectable()
 export class BattleService {
@@ -13,13 +14,16 @@ export class BattleService {
     private readonly usage: UsageService,
   ) {}
 
-  async battle(dto: BattleDto, userId?: string) {
+  async battle(dto: BattleDto, userId?: string, ip?: string) {
     const titleA = dto.titleA.trim();
     const titleB = dto.titleB.trim();
 
-    if (userId) {
-      await this.usage.check(userId);
-    }
+    await this.usage.consume(userId, ip);
+
+    const tier = userId
+      ? (await this.prisma.user.findUnique({ where: { id: userId }, select: { tier: true } }))
+          ?.tier
+      : TIERS.FREE;
 
     const preA = runPreAnalysis(titleA);
     const preB = runPreAnalysis(titleB);
@@ -27,7 +31,6 @@ export class BattleService {
     const result = await this.callLLM(titleA, titleB, preA, preB);
 
     if (userId) {
-      await this.usage.increment(userId);
       await this.prisma.battle.create({
         data: {
           userId,
@@ -41,7 +44,18 @@ export class BattleService {
       });
     }
 
-    return { ...result, _preA: preA, _preB: preB };
+    // Playbook 2.2: free/guest sees the winner and score only (teaser).
+    // Pro gets the summary, both breakdowns and the hybrid suggestion.
+    if (tier !== TIERS.PRO && tier !== TIERS.AGENCY) {
+      return {
+        winner: { title: result.winner?.title, score: result.winner?.score },
+        loser: { title: result.loser?.title, score: result.loser?.score },
+        teaser: true,
+        lockedFields: ["summary", "strengths", "weaknesses", "scoreExplanation", "hybridTitle"],
+      };
+    }
+
+    return result;
   }
 
   private async callLLM(titleA: string, titleB: string, preA: any, preB: any): Promise<any> {

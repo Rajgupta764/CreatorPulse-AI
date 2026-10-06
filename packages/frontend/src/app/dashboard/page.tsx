@@ -10,6 +10,7 @@ import {
   Lightbulb, ClipboardCheck, Map, Shuffle,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
+import { activityLabel } from "@/lib/activity-labels";
 import type { DashboardData } from "@/types";
 
 /* ── helpers ────────────────────────────────────────────────── */
@@ -28,13 +29,13 @@ function relativeTime(dateStr: string) {
 }
 
 const typeConfig: Record<string, { icon: typeof BarChart3; color: string; bg: string }> = {
-  generate: { icon: BarChart3, color: "text-amber-400", bg: "bg-amber-400/10" },
+  generation: { icon: BarChart3, color: "text-amber-400", bg: "bg-amber-400/10" },
   battle:   { icon: Swords,    color: "text-warm-brown", bg: "bg-warm-brown/10" },
   hook:     { icon: Lightbulb, color: "text-muted-tan", bg: "bg-muted-tan/10" },
-  validate: { icon: ClipboardCheck, color: "text-green-500", bg: "bg-green-500/10" },
+  validation: { icon: ClipboardCheck, color: "text-green-500", bg: "bg-green-500/10" },
   readiness:{ icon: Rocket,    color: "text-[#D96B5B]",  bg: "bg-[#D96B5B]/10" },
-  comments: { icon: MessageSquare, color: "text-light-beige", bg: "bg-light-beige/10" },
-  "content-gap": { icon: Map,  color: "text-amber-500", bg: "bg-amber-500/10" },
+  comment:  { icon: MessageSquare, color: "text-light-beige", bg: "bg-light-beige/10" },
+  gap:      { icon: Map,  color: "text-amber-500", bg: "bg-amber-500/10" },
   repurpose:{ icon: Shuffle,   color: "text-amber-400", bg: "bg-amber-400/10" },
 };
 
@@ -242,12 +243,6 @@ export default function DashboardPage() {
   const [tier, setTier] = useState("free");
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-
     async function load() {
       try {
         const [dashRes, profileRes] = await Promise.all([
@@ -268,7 +263,7 @@ export default function DashboardPage() {
       }
     }
     load();
-  }, [router]);
+  }, []);
 
   /* loading skeleton */
   if (loading) {
@@ -499,8 +494,8 @@ export default function DashboardPage() {
                         <p className="text-xs text-muted-foreground">{relativeTime(item.date)}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium capitalize">
-                          {item.type}
+                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium">
+                          {activityLabel(item.type)}
                         </span>
                         {item.score != null && (
                           <span className="font-mono text-sm font-bold">{item.score}</span>

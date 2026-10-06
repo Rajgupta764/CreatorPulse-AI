@@ -12,18 +12,15 @@ export class HookService {
     private readonly usage: UsageService,
   ) {}
 
-  async generate(dto: HookDto, userId?: string) {
+  async generate(dto: HookDto, userId?: string, ip?: string) {
     const title = dto.title.trim();
     const niche = dto.niche?.trim() || "general";
 
-    if (userId) {
-      await this.usage.check(userId);
-    }
+    await this.usage.consume(userId, ip);
 
     const result = await this.callLLM(title, niche);
 
     if (userId) {
-      await this.usage.increment(userId);
       await this.prisma.hook.create({
         data: { userId, inputTitle: title, niche, analysis: result },
       });

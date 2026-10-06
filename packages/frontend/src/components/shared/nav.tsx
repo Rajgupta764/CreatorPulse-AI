@@ -58,9 +58,8 @@ export default function Nav() {
   }, []);
 
   useEffect(() => {
-    if (!token) { setUsage(null); return; }
     apiFetch("/api/usage")
-      .then((r) => r.ok ? r.json() : null)
+      .then((r) => (r.ok ? r.json() : null))
       .then((d) => setUsage(d))
       .catch(() => setUsage(null));
   }, [token, pathname]);
@@ -175,6 +174,14 @@ export default function Nav() {
                 History
               </Link>
 
+              {usage && usage.tier === "guest" && (
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary/8 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/12"
+                >
+                  {usage.remaining} free left
+                </Link>
+              )}
               {usage && usage.tier === "free" && (
                 <Link
                   href="/pricing"
@@ -306,6 +313,9 @@ export default function Nav() {
                   )}
                   {usage && usage.tier === "free" && (
                     <span className="ml-auto text-xs text-primary">{usage.remaining} left</span>
+                  )}
+                  {usage && usage.tier === "guest" && (
+                    <span className="ml-auto text-xs text-primary">{usage.remaining} free left</span>
                   )}
                 </Link>
                 <Link

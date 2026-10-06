@@ -7,6 +7,7 @@ import ToolPageLayout from "@/components/shared/tool-page-layout";
 import AnalyzingState from "@/components/shared/analyzing-state";
 import { apiFetch } from "@/lib/api-client";
 import type { RepurposeResponse } from "@/types";
+import { COPY } from "@creatorpulse/shared";
 
 export default function RepurposePage() {
   const [title, setTitle] = useState("");
@@ -17,7 +18,7 @@ export default function RepurposePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem("access_token"));
+    setIsLoggedIn(Boolean(localStorage.getItem("access_token")));
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -76,7 +77,9 @@ export default function RepurposePage() {
         <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
           <span className="text-muted-foreground">Results won&apos;t be saved. </span>
           <Link href="/login" className="font-medium text-primary hover:underline">Sign in</Link>
-          <span className="text-muted-foreground"> to track your history and unlock 3 analyses/day.</span>
+          <span className="text-muted-foreground">
+            {" "}to track your history and unlock {COPY.freeDailyCompact}.
+          </span>
         </div>
       )}
 

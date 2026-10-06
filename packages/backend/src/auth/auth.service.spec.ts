@@ -46,6 +46,7 @@ describe("AuthService", () => {
       const result = await authService.register({
         email: "test@example.com",
         password: "password123",
+        confirmPassword: "password123",
         displayName: "Test User",
       });
 
@@ -70,6 +71,7 @@ describe("AuthService", () => {
       await authService.register({
         email: "test@example.com",
         password: "password123",
+        confirmPassword: "password123",
       });
 
       const createData = mockPrisma.user.create.mock.calls[0][0].data;
@@ -87,6 +89,7 @@ describe("AuthService", () => {
         authService.register({
           email: "test@example.com",
           password: "password123",
+          confirmPassword: "password123",
         })
       ).rejects.toThrow(ConflictException);
     });

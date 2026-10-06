@@ -5,17 +5,19 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev": "npm run build:shared && concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "npm run start:dev --workspace packages/backend",
     "dev:frontend": "npm run dev --workspace packages/frontend",
-    "build": "npm run build:backend && npm run build:frontend",
+    "build": "npm run build:shared && npm run build:backend && npm run build:frontend",
+    "build:shared": "npm run build --workspace packages/shared",
     "build:backend": "npm run build --workspace packages/backend",
     "build:frontend": "npm run build --workspace packages/frontend",
     "db:migrate": "npm run prisma:migrate --workspace packages/backend",
     "db:generate": "npm run prisma:generate --workspace packages/backend",
     "db:studio": "npm run prisma:studio --workspace packages/backend",
     "lint": "npm run lint --workspace packages/frontend",
-    "test": "npm run test --workspace packages/backend"
+    "test": "npm run build:shared && npm run test --workspace packages/backend",
+    "test:e2e": "npm run build:shared && npm run test:e2e --workspace packages/backend"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

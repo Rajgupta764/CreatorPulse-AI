@@ -5,8 +5,9 @@ import Link from "next/link";
 import { ClipboardCheck, Loader2 } from "lucide-react";
 import ToolPageLayout from "@/components/shared/tool-page-layout";
 import AnalyzingState from "@/components/shared/analyzing-state";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, apiErrorMessage } from "@/lib/api-client";
 import type { ValidateResponse } from "@/types";
+import { COPY } from "@creatorpulse/shared";
 
 export default function ValidatePage() {
   const [idea, setIdea] = useState("");
@@ -16,7 +17,7 @@ export default function ValidatePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem("access_token"));
+    setIsLoggedIn(Boolean(localStorage.getItem("access_token")));
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -27,7 +28,10 @@ export default function ValidatePage() {
         method: "POST",
         body: JSON.stringify({ idea }),
       });
-      if (!res.ok) throw new Error("Validation failed");
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(apiErrorMessage(data, "Validation failed"));
+      }
       setResult(await res.json());
     } catch (err: any) { setError(err.message); } finally { setLoading(false); }
   }
@@ -52,11 +56,21 @@ export default function ValidatePage() {
             onChange={(e) => setIdea(e.target.value)}
             placeholder="Describe your video idea..."
             required
+            minLength={20}
             rows={4}
             className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
           />
+          {idea.trim().length > 0 && idea.trim().length < 20 && (
+            <p className="text-xs text-muted-foreground">
+              {20 - idea.trim().length} more character{20 - idea.trim().length === 1 ? "" : "s"} needed.
+            </p>
+          )}
         </div>
-        <button type="submit" disabled={loading} className="btn btn-primary w-full px-6 py-2.5 sm:w-auto">
+        <button
+          type="submit"
+          disabled={loading || idea.trim().length < 20}
+          className="btn btn-primary w-full px-6 py-2.5 sm:w-auto"
+        >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {loading ? "Validating..." : "Validate Idea"}
         </button>
@@ -66,7 +80,9 @@ export default function ValidatePage() {
         <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
           <span className="text-muted-foreground">Results won&apos;t be saved. </span>
           <Link href="/login" className="font-medium text-primary hover:underline">Sign in</Link>
-          <span className="text-muted-foreground"> to track your history and unlock 3 analyses/day.</span>
+          <span className="text-muted-foreground">
+            {" "}to track your history and unlock {COPY.freeDailyCompact}.
+          </span>
         </div>
       )}
 
@@ -89,6 +105,12 @@ export default function ValidatePage() {
               </div>
             ))}
           </div>
+          {result.recommendation && (
+            <div className="rounded-xl border border-border bg-card p-6">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Recommendation</p>
+              <p className="mt-1.5 text-sm leading-relaxed">{result.recommendation}</p>
+            </div>
+          )}
           {result.evolution && (
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-6">
               <p className="text-xs uppercase tracking-wide text-primary font-medium">Evolved Idea</p>

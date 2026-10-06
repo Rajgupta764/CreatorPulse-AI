@@ -1,36 +1,45 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { ThrottlerGuard } from "@nestjs/throttler";
 import * as request from "supertest";
 import { AppModule } from "../src/app.module";
 import { PrismaService } from "../src/prisma/prisma.service";
+import { validationPipeOptions } from "../src/common/validation";
 
 describe("Auth (e2e)", () => {
   let app: INestApplication;
   let prisma: PrismaService;
 
   const testEmail = `e2e-test-${Date.now()}@example.com`;
-  const testPassword = "testpassword123";
+  const noDisplayNameEmail = `nodisplay-${Date.now()}@example.com`;
+  const testPassword = "TestPass123!";
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix("api");
-    app.useGlobalPipes(
-      new ValidationPipe({ transform: true, whitelist: true })
-    );
+    app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
     await app.init();
 
     prisma = app.get(PrismaService);
   });
 
   afterAll(async () => {
-    const user = await prisma.user.findUnique({ where: { email: testEmail } });
-    if (user) {
-      await prisma.dailyUsage.deleteMany({ where: { userId: user.id } });
-      await prisma.user.delete({ where: { id: user.id } });
+    const orphans = await prisma.user.findMany({
+      where: { email: { in: [testEmail, noDisplayNameEmail] } },
+      select: { id: true },
+    });
+    const ids = orphans.map((u) => u.id);
+    if (ids.length > 0) {
+      await prisma.dailyUsage.deleteMany({ where: { userId: { in: ids } } });
+      await prisma.generation.deleteMany({ where: { userId: { in: ids } } });
+      await prisma.user.deleteMany({ where: { id: { in: ids } } });
     }
     await app.close();
   });
@@ -41,31 +50,123 @@ describe("Auth (e2e)", () => {
         .post("/api/auth/register")
         .send({
           email: testEmail,
-          password: testPassword,
+          password: "TestPass123!",
+          confirmPassword: "TestPass123!",
           displayName: "E2E Test User",
         })
         .expect(201)
         .expect((res) => {
-          expect(res.body.id).toBeDefined();
-          expect(res.body.email).toBe(testEmail);
-          expect(res.body.displayName).toBe("E2E Test User");
-          expect(res.body.tier).toBe("free");
-          expect(res.body.dailyLimit).toBe(3);
+          expect(res.body.access_token).toBeDefined();
+          expect(res.body.user.id).toBeDefined();
+          expect(res.body.user.email).toBe(testEmail);
+          expect(res.body.user.displayName).toBe("E2E Test User");
+          expect(res.body.user.tier).toBe("free");
         });
     });
 
     it("rejects duplicate email", () => {
       return request(app.getHttpServer())
         .post("/api/auth/register")
-        .send({ email: testEmail, password: "anotherpw123" })
+        .send({
+          email: testEmail,
+          password: "AnotherPass123!",
+          confirmPassword: "AnotherPass123!",
+        })
         .expect(409);
     });
 
-    it("rejects weak password", () => {
+    it("rejects weak password (too short)", () => {
       return request(app.getHttpServer())
         .post("/api/auth/register")
-        .send({ email: "shortpw@example.com", password: "123" })
+        .send({
+          email: "shortpw@example.com",
+          password: "123",
+          confirmPassword: "123",
+        })
         .expect(400);
+    });
+
+    it("rejects password without uppercase", () => {
+      return request(app.getHttpServer())
+        .post("/api/auth/register")
+        .send({
+          email: "noupper@example.com",
+          password: "lowercase123!",
+          confirmPassword: "lowercase123!",
+        })
+        .expect(400);
+    });
+
+    it("rejects password without special character", () => {
+      return request(app.getHttpServer())
+        .post("/api/auth/register")
+        .send({
+          email: "nospecial@example.com",
+          password: "NoSpecial123",
+          confirmPassword: "NoSpecial123",
+        })
+        .expect(400);
+    });
+
+    it("rejects password mismatch", () => {
+      return request(app.getHttpServer())
+        .post("/api/auth/register")
+        .send({
+          email: "mismatch@example.com",
+          password: "TestPass123!",
+          confirmPassword: "DifferentPass123!",
+        })
+        .expect(400);
+    });
+
+    it("rejects display name with special characters", () => {
+      return request(app.getHttpServer())
+        .post("/api/auth/register")
+        .send({
+          email: "specialname@example.com",
+          password: "TestPass123!",
+          confirmPassword: "TestPass123!",
+          displayName: "Bad@Name#",
+        })
+        .expect(400);
+    });
+
+    it("rejects display name too short", () => {
+      return request(app.getHttpServer())
+        .post("/api/auth/register")
+        .send({
+          email: "shortname@example.com",
+          password: "TestPass123!",
+          confirmPassword: "TestPass123!",
+          displayName: "A",
+        })
+        .expect(400);
+    });
+
+    it("rejects extra properties (whitelist)", () => {
+      return request(app.getHttpServer())
+        .post("/api/auth/register")
+        .send({
+          email: "extra@example.com",
+          password: "TestPass123!",
+          confirmPassword: "TestPass123!",
+          isAdmin: true,
+        })
+        .expect(400);
+    });
+
+    it("registers without display name (optional)", () => {
+      return request(app.getHttpServer())
+        .post("/api/auth/register")
+        .send({
+          email: noDisplayNameEmail,
+          password: "TestPass123!",
+          confirmPassword: "TestPass123!",
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.user.displayName).toBeNull();
+        });
     });
   });
 

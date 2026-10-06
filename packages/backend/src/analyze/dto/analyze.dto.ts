@@ -4,7 +4,9 @@ import { ApiProperty } from "@nestjs/swagger";
 export class AnalyzeDto {
   @ApiProperty({ example: "10 Ways to Grow Your YouTube Channel in 2024" })
   @IsString()
-  @MinLength(1)
+  @MinLength(10, {
+    message: "Give us a real title — it needs at least 10 characters.",
+  })
   @MaxLength(500)
   title: string;
 
