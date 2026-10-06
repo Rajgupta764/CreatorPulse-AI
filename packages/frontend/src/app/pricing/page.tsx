@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
+import { COPY } from "@creatorpulse/shared";
 
 const plans = [
   {
@@ -12,7 +13,7 @@ const plans = [
     description: "Perfect for trying out CreatorPulse AI and analyzing your first few titles.",
     tier: "free",
     features: [
-      "3 analyses per day",
+      COPY.freeDailyLong,
       "Basic virality score & patterns",
       "Power words & psychology dimensions",
       "Next Move suggestion",
@@ -28,7 +29,7 @@ const plans = [
     description: "For serious creators who want data-driven title optimization every day.",
     tier: "pro",
     features: [
-      "Unlimited analyses (100/day)",
+      COPY.proDailyLong,
       "Full psychology breakdown",
       "Generate 3 AI alternatives",
       "Test titles in Battle mode",
@@ -43,13 +44,13 @@ const plans = [
 ];
 
 const comparisonRows = [
-  { feature: "Analyses per day", free: "3", pro: "Unlimited (100/day)" },
+  { feature: "Analyses per day", free: COPY.comparisonFree, pro: COPY.comparisonPro },
   { feature: "Virality score", free: true, pro: true },
   { feature: "Patterns & power words", free: true, pro: true },
   { feature: "Psychology dimensions", free: "Basic", pro: "Full" },
   { feature: "Next Move suggestion", free: true, pro: true },
   { feature: "Generate 3 alternatives", free: false, pro: true },
-  { feature: "Title Battle mode", free: false, pro: true },
+  { feature: "Title Battle mode", free: "Teaser (winner + score)", pro: "Full breakdown" },
   { feature: "Save & view history", free: false, pro: true },
   { feature: "Export results", free: false, pro: "Coming soon" },
   { feature: "Priority AI queue", free: false, pro: true },

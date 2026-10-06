@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { BarChart3, Loader2, Swords, Sparkles } from "lucide-react";
 import ToolPageLayout from "@/components/shared/tool-page-layout";
 import AnalyzingState from "@/components/shared/analyzing-state";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, apiErrorMessage } from "@/lib/api-client";
 import type { AnalyzeResponse, GeneratedTitle } from "@/types";
 
 export default function GeneratePage() {
@@ -33,7 +33,7 @@ export default function GeneratePage() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || data.message || "Analysis failed");
+        throw new Error(apiErrorMessage(data, "Analysis failed"));
       }
 
       const data = await res.json();
@@ -83,9 +83,15 @@ export default function GeneratePage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+            minLength={10}
             className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="e.g. I Tried 30 Days of Cold Swimming"
           />
+          {title.trim().length > 0 && title.trim().length < 10 && (
+            <p className="text-xs text-muted-foreground">
+              {10 - title.trim().length} more character{10 - title.trim().length === 1 ? "" : "s"} needed.
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -102,7 +108,7 @@ export default function GeneratePage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || title.trim().length < 10}
           className="btn btn-primary w-full px-6 py-2.5 sm:w-auto"
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -222,6 +228,68 @@ export default function GeneratePage() {
                 <p className="mt-4 text-xs text-muted-foreground">
                   Could not generate alternatives. Try again.
                 </p>
+              )}
+            </div>
+          )}
+
+          {result.titles?.length > 0 && (
+            <div className="rounded-xl border border-border bg-card p-6">
+              <p className="text-sm font-medium">Title Suggestions</p>
+              <div className="mt-3 space-y-2">
+                {result.titles.map((t, i) => (
+                  <div key={i} className="rounded-lg border border-border bg-background p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-sm font-medium">{t.title}</p>
+                      {t.pattern && (
+                        <span className="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                          {t.pattern}
+                        </span>
+                      )}
+                    </div>
+                    {t.whyWorks && (
+                      <p className="mt-1 text-xs text-muted-foreground">{t.whyWorks}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(result.description.description || result.description.hashtags?.length > 0) && (
+            <div className="rounded-xl border border-border bg-card p-6">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium">Video Description</p>
+                <span className="text-xs text-muted-foreground">SEO-ready</span>
+              </div>
+
+              {result.description.description && (
+                <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                  {result.description.description}
+                </p>
+              )}
+
+              {result.description.chapters?.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Chapters</p>
+                  <ul className="mt-1.5 space-y-1">
+                    {result.description.chapters.map((c, i) => (
+                      <li key={i} className="flex gap-3 text-sm">
+                        <span className="font-mono text-primary">{c.time}</span>
+                        <span className="text-muted-foreground">{c.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {result.description.hashtags?.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {result.description.hashtags.map((h) => (
+                    <span key={h} className="rounded-md bg-secondary px-2 py-1 text-xs">
+                      {h}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
           )}

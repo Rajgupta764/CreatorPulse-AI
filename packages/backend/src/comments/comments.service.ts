@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { GroqService } from "../common/groq.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsageService } from "../usage/usage.service";
 import { CommentsDto } from "./dto/comments.dto";
+import { LIMITS, TIERS } from "../common/config/limits";
 
 @Injectable()
 export class CommentsService {
@@ -12,37 +13,55 @@ export class CommentsService {
     private readonly usage: UsageService,
   ) {}
 
-  async analyze(dto: CommentsDto, userId: string) {
-    await this.usage.checkAndIncrement(userId);
-
+  async analyze(dto: CommentsDto, userId?: string, ip?: string) {
     const comments = dto.comments.trim();
+
+    const commentLines = comments
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const isPro = userId
+      ? (await this.prisma.user.findUnique({ where: { id: userId }, select: { tier: true } }))
+          ?.tier === TIERS.PRO
+      : false;
+
+    if (!isPro && commentLines.length > LIMITS.commentsFreeCap) {
+      throw new BadRequestException({
+        error: `Free analysis accepts up to ${LIMITS.commentsFreeCap} comments per run. Upgrade to Pro for the full report.`,
+        code: "COMMENTS_CAP",
+      });
+    }
+
+    await this.usage.consume(userId, ip);
+
     let niche = dto.niche?.trim();
     let recentTitles: string[] = [];
 
-    const lastGen = await this.prisma.generation.findFirst({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-    });
-    if (lastGen?.niche && !niche) niche = lastGen.niche;
+    if (userId) {
+      const lastGen = await this.prisma.generation.findFirst({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+      });
+      if (lastGen?.niche && !niche) niche = lastGen.niche;
 
-    const recent = await this.prisma.generation.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      select: { inputTitle: true },
-    });
-    recentTitles = recent.map((r) => r.inputTitle);
+      const recent = await this.prisma.generation.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: { inputTitle: true },
+      });
+      recentTitles = recent.map((r) => r.inputTitle);
+    }
 
     const result = await this.callLLM(comments, niche || "general", recentTitles);
 
-    await this.prisma.commentAnalysis.create({
-      data: { userId, inputComments: comments, analysis: result },
-    });
+    if (userId) {
+      await this.prisma.commentAnalysis.create({
+        data: { userId, inputComments: comments, analysis: result },
+      });
+    }
 
-    return {
-      ...result,
-      _context: { niche: niche || "general", recentTitles: recentTitles.slice(0, 3) },
-    };
+    return result;
   }
 
   private async callLLM(comments: string, niche: string, recentTitles: string[]): Promise<any> {

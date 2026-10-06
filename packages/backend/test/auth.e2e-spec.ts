@@ -4,12 +4,14 @@ import { ThrottlerGuard } from "@nestjs/throttler";
 import * as request from "supertest";
 import { AppModule } from "../src/app.module";
 import { PrismaService } from "../src/prisma/prisma.service";
+import { validationPipeOptions } from "../src/common/validation";
 
 describe("Auth (e2e)", () => {
   let app: INestApplication;
   let prisma: PrismaService;
 
   const testEmail = `e2e-test-${Date.now()}@example.com`;
+  const noDisplayNameEmail = `nodisplay-${Date.now()}@example.com`;
   const testPassword = "TestPass123!";
 
   beforeAll(async () => {
@@ -22,23 +24,22 @@ describe("Auth (e2e)", () => {
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix("api");
-    app.useGlobalPipes(
-      new ValidationPipe({
-        transform: true,
-        whitelist: true,
-        forbidNonWhitelisted: true,
-      })
-    );
+    app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
     await app.init();
 
     prisma = app.get(PrismaService);
   });
 
   afterAll(async () => {
-    const user = await prisma.user.findUnique({ where: { email: testEmail } });
-    if (user) {
-      await prisma.dailyUsage.deleteMany({ where: { userId: user.id } });
-      await prisma.user.delete({ where: { id: user.id } });
+    const orphans = await prisma.user.findMany({
+      where: { email: { in: [testEmail, noDisplayNameEmail] } },
+      select: { id: true },
+    });
+    const ids = orphans.map((u) => u.id);
+    if (ids.length > 0) {
+      await prisma.dailyUsage.deleteMany({ where: { userId: { in: ids } } });
+      await prisma.generation.deleteMany({ where: { userId: { in: ids } } });
+      await prisma.user.deleteMany({ where: { id: { in: ids } } });
     }
     await app.close();
   });
@@ -158,7 +159,7 @@ describe("Auth (e2e)", () => {
       return request(app.getHttpServer())
         .post("/api/auth/register")
         .send({
-          email: `nodisplay-${Date.now()}@example.com`,
+          email: noDisplayNameEmail,
           password: "TestPass123!",
           confirmPassword: "TestPass123!",
         })

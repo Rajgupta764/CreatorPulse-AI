@@ -2,11 +2,21 @@ import "reflect-metadata";
 import helmet from "helmet";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
-import { ValidationPipe, BadRequestException, Logger } from "@nestjs/common";
+import { ValidationPipe, Logger } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { validationPipeOptions } from "./common/validation";
+import { billingEnvIssues } from "./billing/billing.service";
 
 const requiredEnvs = ["DATABASE_URL", "JWT_SECRET"];
-const recommendedEnvs = ["GROQ_API_KEY"];
+const recommendedEnvs = ["GROQ_API_KEY", "REDIS_URL"];
+
+function corsOrigins(): string[] {
+  const raw = process.env.CORS_ORIGINS || "http://localhost:3000";
+  return raw
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+}
 
 function validateEnv() {
   const missing: string[] = [];
@@ -29,6 +39,14 @@ function validateEnv() {
   if (warnings.length > 0) {
     Logger.warn(`Missing recommended env vars: ${warnings.join(", ")}. Some features may not work.`, "Bootstrap");
   }
+
+  const billingIssues = billingEnvIssues();
+  if (billingIssues.length > 0) {
+    Logger.warn(
+      `Billing not fully configured: ${billingIssues.join(", ")}. Checkout and webhooks will fail until fixed.`,
+      "Bootstrap",
+    );
+  }
 }
 
 async function bootstrap() {
@@ -37,27 +55,20 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
 
   app.enableCors({
-    origin: "http://localhost:3000",
+    origin: corsOrigins(),
     credentials: true,
   });
 
   app.use(helmet());
 
+  // Needed for correct client IPs (guest quota) behind a reverse proxy.
+  if (process.env.TRUST_PROXY === "true") {
+    app.getHttpAdapter().getInstance().set("trust proxy", 1);
+  }
+
   app.setGlobalPrefix("api");
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      exceptionFactory: (errors) => {
-        const messages = errors.map((e) =>
-          Object.values(e.constraints || {}).join(", ")
-        );
-        return new BadRequestException(messages.join("; "));
-      },
-    })
-  );
+  app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
 
   const config = new DocumentBuilder()
     .setTitle("CreatorPulse AI API")

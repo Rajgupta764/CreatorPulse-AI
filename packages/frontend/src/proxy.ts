@@ -1,19 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { AUTH_COOKIE } from "@/lib/auth-cookie";
 
-const PROTECTED_ROUTES = [
-  "/generate",
-  "/battle",
-  "/hook",
-  "/validate",
-  "/readiness",
-  "/comments",
-  "/content-gap",
-  "/repurpose",
-  "/dashboard",
-  "/history",
-  "/billing",
-];
+/**
+ * Account-only areas. The AI tool pages are intentionally NOT here: guests
+ * get 3 free analyses per day per IP (playbook 2.2), so they must be reachable
+ * without a session.
+ */
+const PROTECTED_ROUTES = ["/dashboard", "/history", "/billing", "/admin"];
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -34,16 +27,9 @@ export default function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/generate",
-    "/battle",
-    "/hook",
-    "/validate",
-    "/readiness",
-    "/comments",
-    "/content-gap",
-    "/repurpose",
     "/dashboard",
     "/history",
     "/billing/:path*",
+    "/admin/:path*",
   ],
 };

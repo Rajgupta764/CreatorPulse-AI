@@ -27,7 +27,6 @@ Sources: `packages/backend/src/*`, `packages/frontend/src/*`, `docs/MODULE-*.md`
 4. **Layer 4 — Cross-Feature Lookup:** data from other tools is pulled in (recent titles, niche inheritance, unified history, dashboard aggregation).
 
 **Model in use:** `openai/gpt-oss-20b` via the OpenAI SDK pointed at Groq (`temperature 0.8`, `max_tokens 4096`) in `common/groq.service.ts`.
-*(The README/docs still name `llama-3.3-70b-versatile` — the code is the source of truth.)*
 
 ---
 
@@ -40,7 +39,8 @@ All eight tools follow the same contract: `POST /api/<tool>` with `OptionalJwtAu
 The flagship feature and the heaviest pipeline.
 
 - **Route:** `/generate` · **API:** `POST /api/analyze` · **Alt API:** `POST /api/analyze/alternatives` (JWT required)
-- **Input:** `title` (1–500 chars, required), `niche` (≤100 chars, optional, defaults to `"general"`)
+- **Input:** `title` (10–500 chars, ≥2 words, required), `niche` (≤100 chars, optional, defaults to `"general"`)
+- **Input gate:** meaningless text (keysmash, symbol soup, one-word titles) is rejected with **400 `INVALID_INPUT`** *before* the daily credit is spent — `packages/backend/src/common/input-gate.ts`, enforced in `analyze.service.ts` ahead of `usage.consume()`.
 
 **What it does, in order:**
 1. Runs `runPreAnalysis(title)` → `characterCount`, `wordCount`, `hasNumber`, `hasQuestionMark`, `hasColon`, `hasExclamation`, `isComparison`, `isListicle`, `startsWithHowTo/Question/Number`, `capitalRatio`, `lengthFlag`, detected **patterns** (How-To, Number/Listicle, Comparison, Question, Colon, Exclamation, Direct Address, Bracket, Transformational, Contrast, Ultra-Short, Long-Form), matched **power words** (from a ~150-word curated dictionary), a 0–100 **readability score**, and a deterministic **computed virality score**.
@@ -55,7 +55,7 @@ The flagship feature and the heaviest pipeline.
 
 **UI:** virality score card with personal average, pattern + power-word chips, 7 animated psychology bars, playbook card with two actions — *Test in Title Battle* (prefills `/battle?prefill=`) and *Generate 3 Alternatives*.
 
-**Known gaps ⚠️:** guest IP quota is `GUEST_LIMIT = 10` in code but the 429 message says "3 generations"; `titles[]` and `description` are returned by the API but not rendered on the page; `/analyze/alternatives` costs an LLM call without checking usage.
+**Known gaps ⚠️:** ~~guest IP quota is `GUEST_LIMIT = 10`~~ — guest limits now come from `LIMITS.guestDailyCredits` in `packages/shared/src/limits.ts`; `titles[]` and `description` are returned by the API but not rendered on the page.
 
 ---
 
@@ -86,7 +86,8 @@ Generates **three 30-second opening hook scripts** in distinct styles — **ques
 ### 2.4 Idea Incubator — "Validate" ✅
 
 - **Route:** `/validate` · **API:** `POST /api/validate`
-- **Input:** `idea` (≤1000 chars), `niche?` (≤100)
+- **Input:** `idea` (20–1000 chars, ≥4 words), `niche?` (≤100)
+- **Input gate:** same deterministic gate as the Analyzer (`assessIdea`) — nonsense is rejected with **400 `INVALID_INPUT`** before the credit is spent, so gibberish can no longer earn a confident-looking score.
 
 Scores a raw video idea across **six 0–100 dimensions** — Competition, Demand, Virality, Difficulty, Content Gap, Opportunity — each with a one-sentence explanation, plus an `overallScore` and a `recommendation`. **If the overall score is below 70**, the model must return an `evolution` block: `evolvedIdea`, `estimatedNewScore`, `explanation` — a rewritten idea expected to score higher. Saved to `validations`.
 
@@ -174,13 +175,15 @@ Email/password with **bcrypt (12 rounds)** and **stateless JWT** (default expiry
 
 | User | Limit | Tracked in |
 |---|---|---|
-| Guest (per IP) | 10 per 24 h — *message says 3* ⚠️ | in-memory `Map`, only on `/api/analyze` |
-| Free account | `dailyLimit` (schema default **10**) per calendar day | `daily_usage` table |
-| Pro account | **100** per day | `daily_usage` table |
+| Guest (per IP, per day) | `LIMITS.guestDailyCredits` (3), shared across all AI endpoints | Redis (Phase 0) |
+| Free account | `LIMITS.freeDailyCredits` (3) per calendar day | `daily_usage` table |
+| Pro account | `LIMITS.proDailyCredits` (100) per day | `daily_usage` table |
+
+Single source of truth: `packages/shared/src/limits.ts` (compiled to `packages/shared/dist`).
 
 - Pattern everywhere: **check before the LLM call → 429 with an upsell message → increment only after success.**
 - 429 body: *"Daily generation limit reached. Upgrade to Pro for 100/day."*
-- ⚠️ Battle, Hook, Validate, Readiness, Comments, Content-Gap, Repurpose have **no guest limiting at all**; `/analyze/alternatives` skips usage entirely.
+- ✅ Every AI endpoint (analyze, alternatives, battle, hook, validate, readiness, comments, content-gap, repurpose) calls `usage.consume(userId, ip)` before its LLM call, so guests share the same per-IP budget everywhere.
 - 🚧 `resetDailyUsage()` exists but is not exposed by any endpoint.
 
 ### 3.3 Dashboard — "Growth Command Center" ✅
@@ -203,21 +206,31 @@ Email/password with **bcrypt (12 rounds)** and **stateless JWT** (default expiry
 
 - **Tier caps:** free = **exactly 5 per page** (the `limit` param is ignored); pro = up to **50** (lookahead row powers `hasMore`/`nextCursor`).
 - `type` filter accepts the 8 known codes, default `all`.
-- **UI:** filter pills per type, rows with icon/label/relative date/summary/mini score bar, deep links back to the originating tool (`/generate?id=…` etc.), empty state, and a **Load More button rendered only for Pro users** with a free-tier upgrade banner.
+- **View one item:** `GET /api/history/:type/:id` (JWT) → `{ ...item, input, analysis, result }`; 404 for unknown type, malformed id, or another user's record.
+- **Delete one item:** `DELETE /api/history/:type/:id` (JWT) → `{ deleted: true }`; ownership enforced (`id` + `userId` scope), 404 when not found (re-delete included).
+- **UI:** filter pills per type, rows with icon/label/relative date/summary/mini score bar, plus per-row **View** (eye → detail preview modal rendering input/result/analysis) and **Delete** (trash → confirmation dialog, optimistic removal, inline error on failure); clicking a row also opens the preview. Empty state and a **Load More button rendered only for Pro users** with a free-tier upgrade banner.
 
 ### 3.5 Billing & Subscriptions (Lemon Squeezy) ✅
 
 | Endpoint | Guard | Behavior |
 |---|---|---|
 | `POST /api/billing/checkout` | JWT | Creates a Lemon Squeezy checkout session with `custom.user_id`, redirect back to `/billing` |
-| `POST /api/billing/portal` | JWT | Returns the hosted billing portal URL |
-| `POST /api/billing/webhook` | none (HMAC `x-signature` over raw body) | Flips the user's tier |
+| `POST /api/billing/portal` | JWT | Fetches `GET /v1/subscriptions/:id` → pre-signed `urls.customer_portal` (requires a stored `lemonSubscriptionId`) |
+| `POST /api/billing/webhook` | none (HMAC `x-signature` over **raw** body) | Flips the user's tier |
 
-- **Webhook events handled:** `subscription_created` / `order_created` → `tier: "pro"`, `dailyLimit: 100`, `subscriptionStatus: "active"`, stores Lemon customer + subscription IDs. `subscription_expired` / `subscription_cancelled` → `tier: "free"`, `dailyLimit: 3`, `status: "canceled"`.
-- Signature verified with `crypto.timingSafeEqual`; if the secret is unset/placeholder the webhook no-ops gracefully.
+- **Config guard:** non-numeric/placeholder `LEMON_SQUEEZY_STORE_ID` / `LEMON_SQUEEZY_VARIANT_ID` are rejected with a clear message before calling the API; `billingEnvIssues()` also warns at boot about any missing/placeholder billing var.
+- **Webhook response codes:** `200` processed/ignored · `401` invalid signature · `500` secret not configured, bad JSON, missing raw body, or handler failure — so Lemon Squeezy marks failed deliveries and retries instead of silently succeeding.
+- **Signature:** HMAC-SHA256 hex of raw body vs `X-Signature`, compared with `crypto.timingSafeEqual` after a length check (missing/short signature → clean 401, not a `RangeError`).
+- **User resolution:** `meta.custom_data.user_id` first, then fallback lookup by `lemonSubscriptionId` / `lemonCustomerId` (renewal events without custom data still match).
+- **Events handled:**
+  - upgrade → `tier: "pro"`, `dailyLimit: 100`, stores Lemon customer + subscription ids: `subscription_created`, `subscription_updated`, `subscription_resumed`, `subscription_unpaused`, `subscription_plan_changed`, `subscription_payment_success`, `subscription_payment_recovered`, `order_created`.
+  - hold access (status only): `subscription_paused` → `paused`, `subscription_payment_failed` → `past_due`, `subscription_cancelled` with a future `ends_at` → `canceling`.
+  - downgrade → `tier: "free"`, `dailyLimit: 3`: `subscription_expired` → `expired`, `order_refunded` / `subscription_payment_refunded` → `refunded`, cancel with no remaining period → `canceled`, sync with `status` `expired`/`unpaid`.
+  - ignored: `customer_updated` and unknown events (acknowledged `200`).
 - **UI:**
   - `/billing` — post-checkout confirmation that polls `/api/auth/me` every 2 s (max 15 tries) until `tier === "pro"`, then shows *"You're Pro!"*.
   - `/billing/settings` — plan card (Free vs Pro + Active badge), **Upgrade to Pro — $9/month** → checkout redirect, **Manage Subscription** → portal redirect.
+- **Setup docs:** README "Lemon Squeezy webhook setup" (callback URL incl. ngrok for local dev, one-time signing secret sync, full event tick list).
 
 ### 3.6 Pricing ✅
 
@@ -246,7 +259,7 @@ CTAs adapt to auth state (Sign Up Free / Upgrade to Pro / Get Started).
 | `/about` | Story, "Why We Built This", team, CTA ⚠️ (CTA misses its base button class) |
 | `/blog` | 4 article stubs 🚧 — all show `Coming Soon`, links are `#`, no `/blog/[slug]` route |
 | `/privacy` | 5 sections incl. **AI Processing (Groq API)** disclosure, last updated July 2026 |
-| `/terms` | 6 sections incl. **Usage Limits** (Free 3/day, Pro 100/day) ⚠️ still says "ViralForge" |
+| `/terms` | 6 sections incl. **Usage Limits** (Free 3/day, Pro 100/day) ⚠️ all values read from `@creatorpulse/shared` limits |
 | `*` | Custom 404 |
 
 ### 3.8 Global Navigation & Shell ✅
@@ -260,7 +273,7 @@ CTAs adapt to auth state (Sign Up Free / Upgrade to Pro / Get Started).
 
 - Single **light, premium** theme inspired by VEED.io: white background, near-black text, one blue-indigo accent (`#4A6CF7`), soft borders/shadows, 10 px card radius.
 - **Score color scale:** 0–30 needs work · 31–50 average · 51–70 good · 71–85 strong · 86–100 excellent.
-- Inter for UI, JetBrains Mono for all scores/numbers ⚠️ (declared but never loaded → falls back to `ui-monospace`).
+- Inter for UI, JetBrains Mono for all scores/numbers (loaded via `next/font`).
 - Rule set: no pure black, single accent, subtle shadows only, generous whitespace, no dark mode (⚠️ note: `globals.css` currently ships a dark warm-brown palette — migration to the documented light theme is still pending).
 - CSS animation kit: fade/scale/slide reveals, growing bars, ring pulse, floating pills; responsive from mobile → 4-column dashboard grids.
 
@@ -292,30 +305,31 @@ Groq via OpenAI SDK — `call(prompt)`, plus resilience helpers: `extractJson()`
 
 ### 4.5 Testing ✅
 
-- **Unit (Jest):** `auth.service.spec.ts`, `analyzer-engine.spec.ts`, `power-words.spec.ts`.
-- **E2E:** `test/auth.e2e-spec.ts`, `test/analyze.e2e-spec.ts` (needs live DB + Groq key). ⚠️ Auth e2e expectations are stale vs the current response shape and schema default.
+- **Unit (Jest):** `auth.service.spec.ts`, `usage.service.spec.ts`, `analyzer-engine.spec.ts`, `power-words.spec.ts` (67 tests).
+- **E2E:** `test/auth.e2e-spec.ts`, `test/analyze.e2e-spec.ts` — both green via `npm run test:e2e`. The analyze suite stubs `GroqService` so it costs nothing and is immune to model rate limits; set `E2E_LIVE=1` to exercise the real API. Coverage: register/login/me, validation + whitelist, **free-tier 429 after 3 credits**, **guest 429 after 3 per IP**, usage endpoint, response-shape and internal-field checks.
 
 ---
 
 ## 5. Known Gaps & Planned Work
 
 **Implemented but incomplete ⚠️**
-- Large parts of every tool's response are computed but never displayed (battle loser/summary, validate recommendation, readiness areas/advice, comments 7 of 9 outputs, content-gap `nobodyCovers`/recommendation, analyze titles + description).
-- Guest rate limiting only exists on `/api/analyze` (and its constant vs message disagree); no throttling on auth/billing.
-- `dailyLimit` truth is inconsistent: schema default 10, fallback 3, webhook downgrade 3, docs say 3.
-- No client-side limit UX — 429s surface as a raw red error box, no usage bar or upgrade modal on tool pages.
+- ~~Large parts of every tool's response are computed but never displayed~~ — resolved: battle, validate, readiness, comments, content-gap and analyze results all render their full payload (`P0-D`).
+- ~~Guest rate limiting only on `/api/analyze`~~ — resolved: throttler is registered once, every route has a class limit, AI routes override it, guests get a per-IP daily credit quota (`P0-B`); counters are Redis-backed when `REDIS_URL` is set (`P1-H`).
+- ~~`dailyLimit` truth is inconsistent~~ — resolved: `packages/shared/src/limits.ts` is the single source; schema default, webhook downgrade, pricing page and terms all read from it.
+- No client-side limit UX — 429s surface as a raw red error box, no usage bar or upgrade modal on tool pages (`P1-K`).
 - No `middleware.ts`; protected pages are guarded client-side only (token presence).
-- Internal fields leak in responses (`_preA`/`_preB`, `_context`).
-- Branding split: UI says "CreatorPulse AI", `/terms` says "ViralForge"; README/docs model name differs from code.
+- ~~Internal fields leak in responses~~ — resolved: `_preA`/`_preB`/`_context` removed (`P0-B`).
+- ~~Branding split~~ — resolved: "CreatorPulse AI" everywhere, `openai/gpt-oss-20b` in README + docs (`P0-E`).
+- Only **Title Battle** is tier-gated server-side; the rest of the §2.2 Free/Pro matrix (analyzer alternatives/description, comments outputs, content-gap opportunities) is not yet enforced per tier (`P1-K`).
 
 **Documented as planned but not built 🚧**
 - PDF/result **export** ("coming soon" on the pricing page) and a **priority AI queue**.
 - Blog articles and `/blog/[slug]` route.
-- Password reset / "forgot password".
-- `packages/shared/` — shared types & DTOs.
+- Password reset / "forgot password" (`P1-G`).
+- `packages/shared/` — built: `src/limits.ts` is the single source of truth for tier limits; shared types & DTOs still to come.
 - Light-theme migration (per `THEME-OF-THE-website.md` and MODULE-00 Step 9).
 - Any real external scraping — there is **no YouTube/Reddit/Google API integration**; "competitor URLs" are pasted text.
-- No admin tooling (tier changes are done directly in the database).
+- No admin tooling (tier changes are done directly in the database) (`P1-J`).
 
 ---
 

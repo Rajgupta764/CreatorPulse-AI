@@ -4,19 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   BarChart3, Swords, Lightbulb, MessageSquare, Rocket, Map,
-  ClipboardCheck, Shuffle, Loader2, Clock, Sparkles, ChevronRight,
+  ClipboardCheck, Shuffle, Loader2, Clock, Sparkles, Eye, Trash2,
 } from "lucide-react";
-import { apiFetch } from "@/lib/api-client";
-
-interface HistoryItem {
-  id: string;
-  type: string;
-  title: string;
-  summary: string;
-  score?: number;
-  date: string;
-  link: string;
-}
+import { apiFetch, apiErrorMessage } from "@/lib/api-client";
+import { activityLabel } from "@/lib/activity-labels";
+import { HistoryItem, HistoryDetail } from "@/lib/history-types";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { PreviewModal } from "@/components/history/preview-modal";
 
 const FILTERS = [
   { key: "all", label: "All" },
@@ -39,17 +33,6 @@ const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   gap: Map,
   validation: ClipboardCheck,
   repurpose: Shuffle,
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  generation: "Title Analysis",
-  battle: "Title Battle",
-  hook: "Hook Lab",
-  comment: "Audience Compass",
-  readiness: "Launch Command",
-  gap: "Opportunity Map",
-  validation: "Idea Validator",
-  repurpose: "Content Atomizer",
 };
 
 function formatDate(iso: string) {
@@ -75,6 +58,15 @@ export default function HistoryPage() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [tier, setTier] = useState("free");
+
+  const [previewItem, setPreviewItem] = useState<HistoryItem | null>(null);
+  const [previewDetail, setPreviewDetail] = useState<HistoryDetail | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+
+  const [confirmItem, setConfirmItem] = useState<HistoryItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const fetchHistory = useCallback(async (filter: string, cursor?: string) => {
     const params = new URLSearchParams({ type: filter, limit: "15" });
@@ -137,6 +129,64 @@ export default function HistoryPage() {
       // silently fail
     } finally {
       setLoadingMore(false);
+    }
+  }
+
+  async function openPreview(item: HistoryItem) {
+    setPreviewItem(item);
+    setPreviewDetail(null);
+    setPreviewError("");
+    setPreviewLoading(true);
+    try {
+      const res = await apiFetch(`/api/history/${item.type}/${item.id}`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(apiErrorMessage(data, "Failed to load details"));
+      }
+      setPreviewDetail(await res.json());
+    } catch (err: any) {
+      setPreviewError(err.message);
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
+  function closePreview() {
+    setPreviewItem(null);
+    setPreviewDetail(null);
+    setPreviewError("");
+  }
+
+  function openConfirm(item: HistoryItem) {
+    setConfirmItem(item);
+    setDeleteError("");
+  }
+
+  function closeConfirm() {
+    if (deleting) return;
+    setConfirmItem(null);
+    setDeleteError("");
+  }
+
+  async function handleDelete() {
+    if (!confirmItem) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await apiFetch(`/api/history/${confirmItem.type}/${confirmItem.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(apiErrorMessage(data, "Failed to delete item"));
+      }
+      const deletedId = confirmItem.id;
+      setItems((prev) => prev.filter((i) => i.id !== deletedId));
+      setConfirmItem(null);
+    } catch (err: any) {
+      setDeleteError(err.message);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -212,10 +262,18 @@ export default function HistoryPage() {
           {items.map((item) => {
             const Icon = TYPE_ICONS[item.type] || BarChart3;
             return (
-              <Link
+              <div
                 key={item.id}
-                href={item.link}
-                className="flex items-start gap-3 rounded-xl border border-border p-3.5 transition-colors hover:border-primary/20 hover:bg-secondary/40 group"
+                role="button"
+                tabIndex={0}
+                onClick={() => openPreview(item)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openPreview(item);
+                  }
+                }}
+                className="group flex items-start gap-3 rounded-xl border border-border p-3.5 transition-colors hover:border-primary/20 hover:bg-secondary/40 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
                   <Icon className="h-4 w-4" />
@@ -228,7 +286,7 @@ export default function HistoryPage() {
                     </span>
                   </div>
                   <div className="mt-0.5 flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{TYPE_LABELS[item.type] || item.type}</span>
+                    <span className="text-xs text-muted-foreground">{activityLabel(item.type)}</span>
                     <span className="text-xs text-muted-foreground/50">&middot;</span>
                     <span className="text-xs text-muted-foreground truncate">{item.summary}</span>
                   </div>
@@ -244,8 +302,30 @@ export default function HistoryPage() {
                     </div>
                   )}
                 </div>
-                <ChevronRight className="mt-2 h-4 w-4 shrink-0 text-muted-foreground/30 group-hover:text-primary/50 transition-colors" />
-              </Link>
+                <div
+                  className="flex shrink-0 items-center gap-1 self-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    aria-label="View details"
+                    title="View details"
+                    onClick={() => openPreview(item)}
+                    className="rounded-lg p-1.5 text-muted-foreground/60 transition-colors hover:bg-primary/10 hover:text-primary"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Delete from history"
+                    title="Delete from history"
+                    onClick={() => openConfirm(item)}
+                    className="rounded-lg p-1.5 text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             );
           })}
         </div>
@@ -265,6 +345,30 @@ export default function HistoryPage() {
           </button>
         </div>
       )}
+
+      <PreviewModal
+        open={!!previewItem}
+        onClose={closePreview}
+        item={previewItem}
+        detail={previewDetail}
+        loading={previewLoading}
+        error={previewError}
+        icon={previewItem ? TYPE_ICONS[previewItem.type] || BarChart3 : BarChart3}
+      />
+
+      <ConfirmDialog
+        open={!!confirmItem}
+        title="Delete this item?"
+        description={
+          confirmItem
+            ? `"${confirmItem.title}" will be permanently removed from your history. This can't be undone.`
+            : undefined
+        }
+        loading={deleting}
+        error={deleteError}
+        onConfirm={handleDelete}
+        onCancel={closeConfirm}
+      />
     </main>
   );
 }

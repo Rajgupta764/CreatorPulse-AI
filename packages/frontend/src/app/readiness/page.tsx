@@ -109,6 +109,30 @@ export default function ReadinessPage() {
               </div>
             ))}
           </div>
+          {(result.weakestArea || result.strongestArea) && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {result.strongestArea && (
+                <div className="rounded-xl border border-chart-2/30 bg-chart-2/5 p-4">
+                  <p className="text-xs uppercase tracking-wide text-chart-2 font-medium">Strongest area</p>
+                  <p className="mt-1 text-sm">{result.strongestArea}</p>
+                </div>
+              )}
+              {result.weakestArea && (
+                <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+                  <p className="text-xs uppercase tracking-wide text-destructive font-medium">Weakest area</p>
+                  <p className="mt-1 text-sm">{result.weakestArea}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {result.recommendation && (
+            <div className="rounded-xl border border-border bg-card p-6">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Recommendation</p>
+              <p className="mt-1.5 text-sm leading-relaxed">{result.recommendation}</p>
+            </div>
+          )}
+
           {result.improvementChecklist?.length > 0 && (
             <div className="rounded-xl border border-border bg-card p-6 space-y-2">
               <p className="text-sm font-medium">Improvement Checklist</p>
@@ -119,6 +143,13 @@ export default function ReadinessPage() {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {result.finalAdvice && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-6">
+              <p className="text-xs uppercase tracking-wide text-primary font-medium">Final advice</p>
+              <p className="mt-1.5 text-sm leading-relaxed">{result.finalAdvice}</p>
             </div>
           )}
         </div>

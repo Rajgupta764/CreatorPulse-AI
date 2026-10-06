@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Sparkles, ArrowLeft, Loader2, Check, CreditCard } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
+import { COPY } from "@creatorpulse/shared";
 
 export default function BillingSettingsPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -105,7 +106,9 @@ export default function BillingSettingsPage() {
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                {isPro ? "100 analyses/day, full history, priority support" : "3 analyses/day, limited history"}
+                {isPro
+                  ? `${COPY.proDailyCompact}, full history, priority support`
+                  : `${COPY.freeDailyCompact}, limited history`}
               </p>
             </div>
           </div>
@@ -130,7 +133,7 @@ export default function BillingSettingsPage() {
           <div className="rounded-xl bg-gradient-to-r from-primary/[0.06] to-primary/[0.01] p-5">
             <h3 className="font-semibold">Upgrade to Pro</h3>
             <ul className="mt-3 space-y-2">
-              {["100 analyses per day", "Full generation history", "AI title alternatives", "Title battle comparisons", "Priority support"].map((f) => (
+              {[COPY.proDailyFeature, "Full generation history", "AI title alternatives", "Title battle comparisons", "Priority support"].map((f) => (
                 <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Check className="h-4 w-4 shrink-0 text-[#6FA56F]" />
                   {f}

@@ -1,5 +1,6 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { GroqService } from "../common/groq.service";
+import { assessIdea } from "../common/input-gate";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsageService } from "../usage/usage.service";
 import { ValidateDto } from "./dto/validate.dto";
@@ -12,17 +13,24 @@ export class ValidateService {
     private readonly usage: UsageService,
   ) {}
 
-  async validate(dto: ValidateDto, userId: string) {
+  async validate(dto: ValidateDto, userId?: string, ip?: string) {
     const idea = dto.idea.trim();
     const niche = dto.niche?.trim();
 
-    await this.usage.checkAndIncrement(userId);
+    const gate = assessIdea(idea);
+    if (!gate.ok) {
+      throw new BadRequestException({ error: gate.reason, code: "INVALID_INPUT" });
+    }
+
+    await this.usage.consume(userId, ip);
 
     const result = await this.callLLM(idea, niche);
 
-    await this.prisma.validation.create({
-      data: { userId, idea, niche: niche || null, analysis: result },
-    });
+    if (userId) {
+      await this.prisma.validation.create({
+        data: { userId, idea, niche: niche || null, analysis: result },
+      });
+    }
 
     return result;
   }

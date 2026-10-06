@@ -14,7 +14,7 @@
 | **Database** | PostgreSQL | 16 (Docker) | Primary relational data store |
 | **ORM** | Prisma | ^6.x | Type-safe database client, migrations, schema generation |
 | **Auth** | Custom JWT | — | bcrypt + jsonwebtoken for user authentication |
-| **LLM Provider** | Groq API | — | llama-3.3-70b-versatile model via OpenAI SDK |
+| **LLM Provider** | Groq API | — | `openai/gpt-oss-20b` model via OpenAI SDK |
 | **UI Framework** | React | 19.x | Component library |
 | **Styling** | Tailwind CSS | ^4.x | Utility-first CSS |
 | **UI Component Library** | shadcn/ui (base-nova) | latest | Pre-built accessible components |
@@ -297,7 +297,7 @@ services:
     container_name: creatorpulse-db
     restart: unless-stopped
     ports:
-      - '5432:5432'
+      - '5433:5432'
     environment:
       POSTGRES_USER: creatorpulse
       POSTGRES_PASSWORD: creatorpulse
@@ -305,25 +305,42 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    container_name: creatorpulse-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redis_data:/data
+
 volumes:
   postgres_data:
+  redis_data:
 ```
+
+Redis backs shared HTTP rate-limit counters and the per-IP guest credit
+quota (`src/redis/`). It is optional: without `REDIS_URL` the backend falls
+back to in-process counters.
 
 ### Environment Variables
 
 **`packages/backend/.env`:**
 ```
-DATABASE_URL="postgresql://creatorpulse:creatorpulse@localhost:5432/creatorpulse"
+DATABASE_URL="postgresql://creatorpulse:creatorpulse@localhost:5433/creatorpulse"
 JWT_SECRET="your-jwt-secret-key-change-in-production"
 JWT_EXPIRATION="7d"
 GROQ_API_KEY="gsk_..."
 PORT=4000
+CORS_ORIGINS="http://localhost:3000"
+TRUST_PROXY=false
+AI_ENABLED=true
+REDIS_URL="redis://localhost:6379"
 ```
 
 **`packages/frontend/.env.local`:**
 ```
-NEXT_PUBLIC_SUPABASE_URL="https://xxx.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="sb_publishable_xxx"
 NEXT_PUBLIC_SITE_URL="http://localhost:3000"
 NEXT_PUBLIC_API_URL="http://localhost:4000/api"
 ```
@@ -466,7 +483,7 @@ All LLM prompts live in `packages/backend/src/common/groq.service.ts`.
 @Injectable()
 export class GroqService {
   private readonly client: OpenAI;
-  private readonly model = "llama-3.3-70b-versatile";
+  private readonly model = "openai/gpt-oss-20b";
 
   constructor() {
     this.client = new OpenAI({

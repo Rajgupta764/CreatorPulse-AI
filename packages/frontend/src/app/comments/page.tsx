@@ -7,6 +7,28 @@ import AnalyzingState from "@/components/shared/analyzing-state";
 import { apiFetch } from "@/lib/api-client";
 import type { CommentsResponse } from "@/types";
 
+function InsightCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-5">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">{title}</p>
+      <div className="mt-1.5 text-sm">{children}</div>
+    </div>
+  );
+}
+
+function BulletList({ items }: { items: string[] }) {
+  return (
+    <ul className="space-y-1">
+      {items.map((item, i) => (
+        <li key={i} className="flex gap-2 text-sm text-muted-foreground">
+          <span className="text-primary">•</span>
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function CommentsPage() {
   const [comments, setComments] = useState("");
   const [niche, setNiche] = useState("");
@@ -77,6 +99,69 @@ export default function CommentsPage() {
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Summary</p>
             <p className="text-sm mt-1">{result.summary}</p>
           </div>
+
+          {(result.sentiment || result.audienceProfile) && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {result.sentiment && (
+                <InsightCard title="Sentiment">
+                  <p className="text-muted-foreground">{result.sentiment}</p>
+                </InsightCard>
+              )}
+              {result.audienceProfile && (
+                <InsightCard title="Audience profile">
+                  <p className="text-muted-foreground">{result.audienceProfile}</p>
+                </InsightCard>
+              )}
+            </div>
+          )}
+
+          {result.requestedTopics?.length > 0 && (
+            <InsightCard title="Most requested topics">
+              <ul className="flex flex-wrap gap-2">
+                {result.requestedTopics.map((t, i) => (
+                  <li
+                    key={i}
+                    className="rounded-full border border-border bg-secondary/60 px-3 py-1 text-xs"
+                  >
+                    {t.topic}
+                    {t.frequency && <span className="text-muted-foreground"> · {t.frequency}</span>}
+                  </li>
+                ))}
+              </ul>
+            </InsightCard>
+          )}
+
+          {result.questions?.length > 0 && (
+            <InsightCard title="Questions your audience is asking">
+              <ul className="space-y-2">
+                {result.questions.map((q, i) => (
+                  <li key={i}>
+                    <p className="font-medium">{q.question}</p>
+                    {q.context && <p className="text-xs text-muted-foreground">{q.context}</p>}
+                  </li>
+                ))}
+              </ul>
+            </InsightCard>
+          )}
+
+          {result.confusion?.length > 0 && (
+            <InsightCard title="Points of confusion">
+              <BulletList items={result.confusion} />
+            </InsightCard>
+          )}
+
+          {result.painPoints?.length > 0 && (
+            <InsightCard title="Pain points">
+              <BulletList items={result.painPoints} />
+            </InsightCard>
+          )}
+
+          {result.contentGapAlerts?.length > 0 && (
+            <InsightCard title="Content gap alerts">
+              <BulletList items={result.contentGapAlerts} />
+            </InsightCard>
+          )}
+
           {result.videoIdeas?.length > 0 && (
             <div className="space-y-3">
               <p className="text-sm font-medium">Video Ideas</p>

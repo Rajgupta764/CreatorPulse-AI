@@ -5,6 +5,7 @@ import { AuthService } from "./auth.service";
 import { RegisterDto, LoginDto } from "./dto";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
+import { HTTP_LIMITS, routeThrottle } from "../common/config/limits";
 
 @ApiTags("Auth")
 @Controller("auth")
@@ -12,13 +13,13 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post("register")
-  @Throttle({ default: { limit: 5, ttl: 600000 } })
+  @Throttle(routeThrottle(HTTP_LIMITS.register))
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post("login")
-  @Throttle({ default: { limit: 10, ttl: 600000 } })
+  @Throttle(routeThrottle(HTTP_LIMITS.login))
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }

@@ -19,3 +19,11 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
 
   return res;
 }
+
+export function apiErrorMessage(data: unknown, fallback: string): string {
+  const body = data as { message?: unknown; error?: unknown } | null;
+  if (typeof body?.message === "string" && body.message.trim()) return body.message;
+  if (Array.isArray(body?.message) && body.message.length) return body.message.join("; ");
+  if (typeof body?.error === "string" && body.error.trim()) return body.error;
+  return fallback;
+}

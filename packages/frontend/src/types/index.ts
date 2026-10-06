@@ -49,11 +49,23 @@ export interface GeneratedDescription {
   hashtags: string[];
 }
 
+export interface BattleSide {
+  title: string;
+  score: number;
+  reason?: string;
+  strengths?: string[];
+  weaknesses?: string[];
+  scoreExplanation?: string;
+}
+
 export interface BattleResponse {
-  winner: { title: string; score: number; reason: string; strengths: string[]; weaknesses: string[]; scoreExplanation: string };
-  loser: { title: string; score: number; reason: string; strengths: string[]; weaknesses: string[]; scoreExplanation: string };
-  summary: string;
-  hybridTitle: { title: string; explanation: string };
+  winner: BattleSide;
+  loser: BattleSide;
+  summary?: string;
+  hybridTitle?: { title: string; explanation: string };
+  /** Free/guest teaser: only title + score are present. */
+  teaser?: boolean;
+  lockedFields?: string[];
 }
 
 export interface HookResponse {

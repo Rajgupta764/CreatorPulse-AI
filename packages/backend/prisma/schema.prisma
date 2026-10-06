@@ -13,6 +13,8 @@ model User {
   passwordHash        String    @map("password_hash")
   displayName         String?   @map("display_name")
   tier                String    @default("free")
+  // Default must match LIMITS.freeDailyCredits in packages/shared/src/limits.ts.
+  // Runtime enforcement reads the shared config, not this column.
   dailyLimit          Int       @default(3) @map("daily_limit")
   lemonCustomerId     String?   @map("lemon_customer_id")
   lemonSubscriptionId String?   @map("lemon_subscription_id")

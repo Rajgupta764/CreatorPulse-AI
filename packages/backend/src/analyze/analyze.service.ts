@@ -1,5 +1,6 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { runPreAnalysis, getWeakestDimension, generateNextAction } from "../common/engine";
+import { assessTitle } from "../common/input-gate";
 import { GroqService } from "../common/groq.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsageService } from "../usage/usage.service";
@@ -15,14 +16,19 @@ export class AnalyzeService {
     private readonly usage: UsageService,
   ) {}
 
-  async analyze(dto: AnalyzeDto, userId: string) {
+  async analyze(dto: AnalyzeDto, userId?: string, ip?: string) {
     const title = dto.title.trim();
     const niche = dto.niche?.trim() || "general";
 
-    await this.usage.checkAndIncrement(userId);
+    const gate = assessTitle(title);
+    if (!gate.ok) {
+      throw new BadRequestException({ error: gate.reason, code: "INVALID_INPUT" });
+    }
+
+    await this.usage.consume(userId, ip);
 
     const preAnalysis = runPreAnalysis(title);
-    const userContext = await this.getUserContext(userId);
+    const userContext = userId ? await this.getUserContext(userId) : null;
 
     const analysis = await this.callLLM(title, preAnalysis, niche);
 
@@ -58,7 +64,9 @@ export class AnalyzeService {
       ? descResult.value
       : { description: "", chapters: [], hashtags: [] };
 
-    await this.saveToDb(userId, title, niche, analysis, titles, description);
+    if (userId) {
+      await this.saveToDb(userId, title, niche, analysis, titles, description);
+    }
 
     return { analysis, titles, description };
   }
@@ -159,8 +167,13 @@ Target niche: "${niche}"`;
     return this.groq.safeParse(json).titles || [];
   }
 
-  async generateAlternatives(title: string, suggestion: string, userId: string): Promise<string[]> {
-    await this.usage.checkAndIncrement(userId);
+  async generateAlternatives(
+    title: string,
+    suggestion: string,
+    userId?: string,
+    ip?: string,
+  ): Promise<string[]> {
+    await this.usage.consume(userId, ip);
 
     const prompt = `You are a viral YouTube title strategist. Given a title and a specific suggestion for improvement, generate 3 alternative titles that apply the suggestion.
 

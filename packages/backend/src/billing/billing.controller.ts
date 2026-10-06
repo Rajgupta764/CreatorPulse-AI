@@ -1,4 +1,4 @@
-import { Controller, Post, Headers, UseGuards, HttpCode, Req } from "@nestjs/common";
+import { Controller, Post, Headers, UseGuards, HttpCode, Req, InternalServerErrorException } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
 import { BillingService } from "./billing.service";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
@@ -27,12 +27,13 @@ export class BillingController {
   @HttpCode(200)
   async webhook(
     @Req() req: any,
-    @Headers("x-signature") signature: string,
+    @Headers("x-signature") signature: string | string[] | undefined,
   ) {
-    const body = req.rawBody || req.body;
-    return this.billingService.handleWebhook(
-      Buffer.isBuffer(body) ? body : Buffer.from(JSON.stringify(body)),
-      signature,
-    );
+    const body = req.rawBody;
+    if (!Buffer.isBuffer(body) || body.length === 0) {
+      throw new InternalServerErrorException({ message: "Raw request body unavailable" });
+    }
+    const rawSignature = Array.isArray(signature) ? signature[0] : signature;
+    return this.billingService.handleWebhook(body, rawSignature || "");
   }
 }

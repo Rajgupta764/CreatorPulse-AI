@@ -12,17 +12,19 @@ export class RepurposeService {
     private readonly usage: UsageService,
   ) {}
 
-  async repurpose(dto: RepurposeDto, userId: string) {
+  async repurpose(dto: RepurposeDto, userId?: string, ip?: string) {
     const title = dto.title.trim();
     const niche = dto.niche?.trim() || "general";
 
-    await this.usage.checkAndIncrement(userId);
+    await this.usage.consume(userId, ip);
 
     const result = await this.callLLM(title, niche);
 
-    await this.prisma.repurpose.create({
-      data: { userId, title, niche, analysis: result },
-    });
+    if (userId) {
+      await this.prisma.repurpose.create({
+        data: { userId, title, niche, analysis: result },
+      });
+    }
 
     return result;
   }
