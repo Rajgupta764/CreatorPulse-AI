@@ -13,6 +13,7 @@
     "build:backend": "npm run build --workspace packages/backend",
     "build:frontend": "npm run build --workspace packages/frontend",
     "db:migrate": "npm run prisma:migrate --workspace packages/backend",
+    "db:deploy": "npm run prisma:deploy --workspace packages/backend",
     "db:generate": "npm run prisma:generate --workspace packages/backend",
     "db:studio": "npm run prisma:studio --workspace packages/backend",
     "lint": "npm run lint --workspace packages/frontend",

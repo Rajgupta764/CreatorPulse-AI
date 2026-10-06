@@ -70,15 +70,19 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
 
-  const config = new DocumentBuilder()
-    .setTitle("CreatorPulse AI API")
-    .setDescription("Research Intelligence for YouTube Creators")
-    .setVersion("1.0")
-    .addBearerAuth()
-    .build();
+  const swaggerEnabled =
+    process.env.SWAGGER_ENABLED === "true" || process.env.NODE_ENV !== "production";
+  if (swaggerEnabled) {
+    const config = new DocumentBuilder()
+      .setTitle("CreatorPulse AI API")
+      .setDescription("Research Intelligence for YouTube Creators")
+      .setVersion("1.0")
+      .addBearerAuth()
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api/docs", app, document);
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup("api/docs", app, document);
+  }
 
   await app.listen(process.env.PORT || 4000);
 }

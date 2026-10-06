@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://creatorpulse.ai"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: "CreatorPulse AI — Research Intelligence for YouTube Creators",
   description: "Research Intelligence Platform for YouTube creators. Analyze, battle, and optimize your video titles with data-driven insights.",
   icons: { icon: "/favicon.svg", apple: "/favicon.svg" },

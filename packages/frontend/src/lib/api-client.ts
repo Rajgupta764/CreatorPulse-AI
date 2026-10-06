@@ -1,5 +1,9 @@
 import { clearAuthCookie } from "@/lib/auth-cookie";
 
+// Origin of the backend API (e.g. https://api.example.com). Unset in local dev
+// so requests stay relative and go through the next.config.ts rewrite.
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+
 export async function apiFetch(url: string, options: RequestInit = {}) {
   const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
   const headers: Record<string, string> = {
@@ -8,7 +12,8 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(url, { ...options, headers });
+  const target = url.startsWith("/") ? `${API_BASE}${url}` : url;
+  const res = await fetch(target, { ...options, headers });
 
   if (res.status === 401 && token) {
     localStorage.removeItem("access_token");

@@ -1,4 +1,4 @@
-import { Controller, Get } from "@nestjs/common";
+import { Controller, Get, ServiceUnavailableException } from "@nestjs/common";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -18,11 +18,18 @@ export class HealthController {
       // dbStatus stays disconnected
     }
 
-    return {
-      status: "ok",
+    const body = {
+      status: dbStatus === "connected" ? "ok" : "degraded",
       uptime: process.uptime(),
       database: dbStatus,
       timestamp: new Date().toISOString(),
     };
+
+    // 503 so load balancers and uptime monitors treat a broken DB as down.
+    if (dbStatus !== "connected") {
+      throw new ServiceUnavailableException(body);
+    }
+
+    return body;
   }
 }

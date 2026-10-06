@@ -1,0 +1,41 @@
+# Render Blueprint — backend API (NestJS) for the CreatorPulse AI monorepo.
+# Create → Dashboard → New → Blueprint → pick this repo.
+# Secrets (sync: false) are entered in the Render dashboard after creation.
+
+services:
+  - type: web
+    name: creatorpulse-api
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: npm ci && npm run build:shared && npm run build:backend
+    startCommand: npx prisma migrate deploy --schema packages/backend/prisma/schema.prisma && node packages/backend/dist/main
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "true"
+      - key: SWAGGER_ENABLED
+        value: "false"
+      - key: AI_ENABLED
+        value: "true"
+      - key: JWT_EXPIRATION
+        value: 7d
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SITE_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: LEMON_SQUEEZY_API_KEY
+        sync: false
+      - key: LEMON_SQUEEZY_STORE_ID
+        sync: false
+      - key: LEMON_SQUEEZY_VARIANT_ID
+        sync: false
+      - key: LEMON_SQUEEZY_WEBHOOK_SECRET
+        sync: false
